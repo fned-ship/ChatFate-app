@@ -1,0 +1,326 @@
+:root{
+            --mainPurple: rgb(38, 17, 34);
+            --headerColor: rgba(24, 11, 44, 0.5);
+            --friendListColor:rgba(61, 61, 61, 0.8);
+            --baseFont:4.3svh;
+        }
+        .profilepage{
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            font-family:  sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+    background-image: url(bg2.jpg);
+            background-position: center center;
+            background-size: cover;
+        }
+        
+        
+
+
+        .profilepage>header{
+            width:100% ;
+            height: calc(3 * var(--baseFont));
+            background-color:  var(--headerColor);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding:0px min(7%, 30px);
+            box-sizing: border-box;
+        }
+        
+        .tools{
+            height: 30%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tools>svg{
+            height:100%;
+            aspect-ratio: 1/1;
+        }
+        .tools>svg>path{
+            fill:white;
+        }
+        .rest{
+            display: flex;
+            flex: 1;
+        }
+        .friendList{
+            height: calc(100svh - 3 * var(--baseFont));
+            width: 35%;
+            overflow-x: hidden;
+            background-color: var(--friendListColor);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            
+            overflow-y: auto;
+        }
+        .random>*{
+            animation-name: popup ;
+            animation-duration: 1s;
+            max-width: 90%;
+        }
+        @keyframes popup{
+            0% {
+                transform: translateY(50%);
+                opacity: 0;
+            }
+            100%{
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .profile{
+            display: flex;
+            gap: 5%;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color:  var(--mainPurple);
+            background: linear-gradient(125deg,var(--mainPurple) 20%, rgb(73 57 54));
+            color: white;
+            border-bottom-left-radius: calc(var(--baseFont) + 5px);
+            position: relative;
+            margin-bottom: calc(var(--baseFont) * 0.5 );
+        }
+        .profile>img{
+            height: calc(2 * var(--baseFont ));
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            object-position: center center;
+            border-radius: 50%;
+        }
+        .profile>span{
+            font-size: calc(0.7 * var(--baseFont));
+            font-weight: bold;
+            width: 50%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .profile>svg{
+            height: var(--baseFont);
+            aspect-ratio: 1/1;
+            fill: rgb(255, 255, 255);
+            position: absolute;
+            right: 20px;
+        }
+
+        .toggleBar{
+            align-self: center;
+            background-color: var(--mainPurple);
+            color: white;
+            border-radius: 50vh;
+            display: flex;
+            gap: 30px;
+            font-size: calc(0.7 * var(--baseFont));
+            padding: 10px;
+            margin-bottom: calc(var(--baseFont) * 0.5 );
+        }
+        .toggle{
+            flex: 1;
+            position: relative;
+            
+        }
+        .toggleBar>.toggle>span{
+            position:relative;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .toggle input[type="radio"] {
+            cursor: pointer;
+            z-index: 1;
+  appearance: none;
+  -webkit-appearance: none; 
+  margin: 0;
+  top: -10px;
+  left: -10px;
+  width: calc(100% + 20px);
+  height: calc(100% + 20px );
+  position: absolute;
+  border-radius: 50vh;
+}
+input[type="radio"]:checked {
+  background-color: white;
+}
+.toggleBar>.toggle:has(input[type="radio"]:checked){
+    color:var(--mainPurple);
+}
+
+        .message{
+            height: calc(2 * var(--baseFont) + 40px);
+            width: 100%;
+            background: linear-gradient(rgb(160, 160, 160));
+            background-size: 80% 1px;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            display: flex;
+            align-items: center;
+            gap: calc(0.6 * var(--baseFont));
+            padding: 20px 10px;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .message:hover{
+            background-color: rgba(78, 78, 78, 0.5);
+        }
+        .friendProfile{
+            height: 100%;
+            aspect-ratio: 1/1;
+            position: relative;
+        }
+        .friendProfile>img{
+            height: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            object-position: center center;
+            border-radius: 50%;
+            
+        }
+        .active >img{
+            mask: radial-gradient(calc(0.4 * var(--baseFont)) at 93% 93% ,#0000 calc(100% ),#000);
+            
+        }
+        .active::after{
+            content: "";
+            display: block;
+            width: calc(0.4 * var(--baseFont)) ;
+            aspect-ratio: 1/1;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background-color: rgb(0, 180, 0);
+        }
+        /* .active{
+            width: calc(0.4 * var(--baseFont)) ;
+            aspect-ratio: 1/1;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background-color: rgb(0, 180, 0);
+            /* border: calc(var(--baseFont) * 0.05) solid rgb(255, 255, 255); */
+        
+        .content{
+            width: calc(100% - 2.6 * var(--baseFont));
+            display: flex;
+            flex-direction: column;
+            gap: calc( 0.3 * var(--baseFont));
+        }
+        .content>span{
+            font-size: calc(0.7 * var(--baseFont));
+            font-weight: bolder;
+        }
+        .content>div{
+            display: flex;
+            gap: 10px;
+            color: white;
+            font-size: calc(0.5 * var(--baseFont));
+            white-space: nowrap;
+        }
+        .lastMessage{
+            flex-shrink: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .random{
+            flex: 1;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 30px;
+            
+            color: white;
+            font-size: calc(0.8 * var(--baseFont));
+            font-weight: bold;
+            font-family:"Literata";
+            text-align: center;
+        }
+        .buttons{
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .buttons>button{
+            background: radial-gradient(#dabe37,#6f5d01);
+            font-size: calc(0.7 * var(--baseFont));
+            color: white;
+            padding: min(20px, 20%);
+            border-radius: 50vh;
+            white-space: nowrap;
+            background-color: white;
+            width: calc(fit-content + var(--baseFont) ) ;
+            display: flex;
+            gap: 5%;
+            align-items: center;
+        }
+        .buttons>button:hover{
+            box-shadow: 0px 0px 10px rgba(154, 154, 154, 0.5);
+        }
+        .buttons>button::before{
+            content: "";
+            background-image: url("camIcon.png");
+            background-size: cover;
+            background-repeat:no-repeat ;
+            background-position: center center;
+            display: block;
+            height: calc(0.7 * var(--baseFont));
+            aspect-ratio: 1/1;
+        }
+        .textChat::before{
+            background-image: url("chatIcon.png");
+        }
+
+        .chatbox{
+            display: none;
+            width: 65%;
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(128, 128, 128, 0.5);
+        }
+        .chatHeader{
+            height: calc(var(--baseFont) + 20px);
+            padding: 10px;
+            background: linear-gradient(rgb(41, 41, 41) ,transparent);
+            display: flex;
+            gap: min(5%,15px);
+            align-items: center;
+            color: white;
+            font-size:calc(0.7 * var(--baseFont));
+            font-weight: bold;
+        }
+       
+        
+        @media screen and (max-aspect-ratio: 1/1) {
+            :root{
+                --baseFont:5.5svw;
+            }
+            .rest{
+                flex-direction: column;
+            }
+            .chatbox ,.friendList{
+                width: 100%;
+                max-width: none;
+                order: 2;
+                min-height: 100svh;
+                height: fit-content;
+            }
+            .random{
+                flex: auto;
+                order: 1;
+                height: calc(100svh - 3 * var(--baseFont));
+            }
+            .buttons{
+                flex-direction: column;}
+            }

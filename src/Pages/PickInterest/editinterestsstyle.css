@@ -1,0 +1,43 @@
+.interestPage{
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(125deg, #f1be0f, rgb(237 217 140));
+    font-family: 'Roboto';
+}
+.heading1{
+    color: white;
+    font-size: var(--baseFont);
+  font-family: "Ultra", serif;
+  font-style: normal;
+}
+
+
+.heading1>span:last-of-type,.intr{
+    font-size:  calc(0.7 * var(--baseFont));
+}
+.cat{
+    margin-top: var(--baseFont);
+    display: flex;
+    flex-direction: column;
+    gap: 12vh;
+    font-size: var(--baseFont);
+    font-family: "Ultra", serif;
+    color: white;
+    width: 100%;
+    max-width: 1200px;
+    align-self: center;
+    background: linear-gradient(transparent, red 90%),url("Hobbies.jpg") ;
+    padding: 20px ;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+
+.intr{
+    padding: 10px;
+    font-family: "Roboto", system-ui;
+    border-radius: 10px;
+    border: 1px solid white;
+}

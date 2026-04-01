@@ -1,0 +1,218 @@
+:root{
+            --mainPurple2: rgb(49 32 48);
+            --baseFont2:5svh;
+        }
+        .randomchatpage{
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: calc(0.3 * var(--baseFont2));
+            font-family:  sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+    padding-top: 1rem;
+    box-sizing: border-box;
+        }
+        .background{
+            z-index: -1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20%;
+            object-fit: cover;
+            object-position: center center;
+        }
+        .overlay{
+            z-index: -1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent, var(--mainPurple) 15%);
+        }
+        
+        .common{
+            margin: min(15px,5%) ;
+            margin-bottom: 0 ;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            max-height: calc(3.3 * var(--baseFont2));
+            font-size: calc(0.5 * var(--baseFont2));
+            overflow-y: auto;
+        }
+        .title{
+            color:white;
+            margin: 0;
+        }
+        .interest{
+            padding: min(3%,15px);
+            background-color: rgb(172, 81, 96);
+            color: rgba(0,0,0,0.5);
+            border-radius: 50vh;
+            font-weight: bold;
+        }
+    
+        .screen{
+            display: flex;
+            flex: 1;
+            gap: 2%;
+            padding: min(5%,20px);
+            box-sizing: border-box;
+        }
+        .cams{
+            flex:2;
+            gap: min(10px,2%);
+            display: flex;
+        }
+
+        .videoscreen{
+            flex: 1;
+            background-image: url("adem.jpg");
+            
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-color: gray;
+            border-radius: calc(0.8 * var(--baseFont2));
+            border: calc(0.15 * var(--baseFont2)) solid white;
+            position: relative;
+            overflow: hidden;
+
+        }
+        .videoscreen>video{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .second{
+            background-image: url("fned.jpg");
+        }
+        .sticker{
+            padding: 2%;
+            padding-right: 8%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: white;
+            border-radius: 50vh ;
+            display: flex;
+            align-items: center;
+            gap: 8%;
+            box-sizing: border-box;
+        }
+
+        .sticker>img{
+            height:  var(--baseFont2) ;
+            aspect-ratio: 1/1;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: center center;
+            
+        }
+        .sticker>span{
+            font-size:calc(0.5* var(--baseFont2));
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+
+        .chatcontainer{
+            flex:1;
+            display: flex;
+            flex-direction: column;
+            gap: min(2%,10px);
+            justify-content: space-between;
+        }
+        .chatbuttons{
+            height: 10%;
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .btn{
+            background: radial-gradient(circle,red,rgb(88, 1, 1));
+            color:white;
+            font-size: calc(0.5 * var(--baseFont2) ) ;
+            border-radius: 50vh ;
+        }
+        .friend{
+            background: radial-gradient(circle,rgb(61, 60, 148) 20%,rgb(38, 34, 82));
+            width: 45%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10%;
+        }
+        .friend::before{
+            content: "";
+            background-image: url("addFriend.png");
+            background-size: contain;
+            background-position: center center;
+            display: block;
+            height: 70%;
+            aspect-ratio: 1/1;
+
+
+        }
+        .skip{
+            background: radial-gradient(circle,rgb(5, 218, 126),rgb(29, 108, 61));
+            width: 35%;
+        }
+        .report{
+            width: 10%;
+        }
+        @media screen and (max-aspect-ratio: 15/10) {
+            .cams{
+                flex: 1;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .friend::after{
+                left: 5px;
+
+            }
+        }
+        @media screen and (max-aspect-ratio: 2/3) {
+        :root{
+            --baseFont2:7svw;
+        }
+    }
+        @media screen and (max-aspect-ratio: 1/1) {
+            
+            body{
+                overflow: visible;
+            }
+            .screen{
+                flex-direction: column;
+                gap: 15px;
+            }
+            .videoscreen{
+                aspect-ratio: 3/2;
+            }
+            .chatcontainer{
+                aspect-ratio: 1/1;
+            }
+            .sticker{
+                top: 2px;
+                left: 2px;
+                background-color: rgba(255, 255, 255,0.8);
+            }
+            .flux{
+                order: 1;
+            }
+            .buttons{
+                order: 0;
+            }
+        }

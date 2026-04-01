@@ -1,0 +1,67 @@
+body{
+  margin: 0;
+}
+input[type="file"]::file-selector-button {
+  background-color: transparent;
+  color: transparent;
+  cursor: pointer;
+  border: none;
+}
+button:hover , svg:hover{
+  scale: 0.9;
+}
+button,svg{
+  border: none;
+  cursor: pointer;
+}
+input{
+  border: none;
+}
+input:focus{
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(103, 103, 103);
+}
+
+::-webkit-scrollbar-thumb {
+  background: white;
+  border-radius: 10px;
+  border: 2px solid transparent;
+ background-clip: padding-box;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border: 0 ;
+}
+.brand{
+            color: white;
+            font-size: var(--baseFont);
+            font-weight: bold;
+            font-family: "Literata";
+            align-self: center;
+            display: flex;
+            align-items: center;
+            height: var(--baseFont);
+            gap: 2%;
+        }
+        .brand::before{
+            content: "";
+            background-image: url("moon.png");
+            background-size: contain;
+            background-repeat:no-repeat ;
+            background-position: center center;
+            display: block;
+            height: 100%;
+            aspect-ratio: 1/1;
+        }
+
+*{
+}

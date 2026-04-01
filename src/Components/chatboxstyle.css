@@ -1,0 +1,202 @@
+ .flux{
+            flex: 1 1 0;
+            backdrop-filter: blur(8px);
+            color: rgb(255, 255, 255);
+            padding: min(20px,5%);
+            display: flex;
+            flex-direction: column;
+            gap: min(2vh,20px);
+            box-sizing: border-box;
+            font-size: calc(0.45 * var(--baseFont));
+            
+            position: relative;
+        }
+        .fluxMessages{
+            flex: 1 1 0;
+            display: flex;
+            flex-flow: column nowrap;
+            gap: min(1vh,10px);
+            overflow-y: auto;
+            word-break: break-all;
+        }
+        .fluxMessages >:first-child{
+            margin-top: auto;
+        }
+        .myMessage{
+            align-self: flex-end;
+            max-width: 70%;
+        }
+        .otherMessage{
+            align-self: flex-start;
+            max-width: 70%;
+
+        }
+        .otherMessage, .myMessage{
+            font-size: calc(var(--baseFont) * 0.5);
+            color: white;
+            padding: calc(var(--baseFont) * 0.5);
+            background-color: rgb(41, 41, 41);
+            border-radius: calc(var(--baseFont) * 0.5);
+            position: relative;
+
+        }
+
+        .actions{
+            position: absolute;
+            bottom: -2%;
+            background-color: inherit;
+            transform: translateY(100%);
+            display: flex;
+            padding-block: min(1vh,1vw,10px);
+            padding-inline: min(3vh,3vw,20px);
+            box-sizing: border-box;
+            gap: 50%;
+            justify-content: center;
+            border-radius: 50vh;
+        }
+        .otherMessage > .actions{
+            left: var(--baseFont);
+        }
+        .otherMessage{
+            background-color: var(--mainPurple);
+        }
+        .myMessage > .actions{
+            right: var(--baseFont);
+        }
+        .actions>img{
+            height: calc(var(--baseFont) * 0.6); 
+            aspect-ratio: 1/1;
+            cursor: pointer;
+
+        }
+        .actions>img:hover{
+            scale: 0.95;
+        }
+        .controls{
+            display: flex;
+            gap: 1%;
+            width: 100%;
+        }
+        .controls>input{
+            border: none;
+            flex: 1;
+            padding-left: min(5%,20px);
+            box-sizing: border-box;
+            font-size: calc(0.5 * var(--baseFont));
+            background-color: rgb(198, 198, 198);
+            border-radius: 50vh;
+
+        }
+        .controls svg{
+            height: calc(1.2 * var(--baseFont));
+            aspect-ratio: 1/1; 
+        }
+        .controls path{
+            fill: rgb(198, 198, 198) ;
+        }
+        .sendButton{
+            position: relative;
+            aspect-ratio: 1/1;
+        }
+        .sendButton>input{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        .sendButton:has(input:hover){
+            scale: 0.9;
+        }
+        .sendButton>svg{
+            pointer-events: none;
+        }
+        .replyto{
+            width: 25vw;
+            margin-top: 2%;
+            display: flex;
+            gap:1%;
+            font-size: calc(var(--baseFont) * 0.55);
+            color: rgb(166, 166, 166); 
+           
+        }
+        .replyto>span:first-child{
+            font-weight: bold;
+            color: rgb(0, 0, 0);
+            width: fit-content;
+        }
+        .replyto > span{
+
+            white-space: nowrap;
+            
+            
+        }
+        .replyto>span:last-child{
+            flex: 1 1 0;
+            overflow: hidden;
+            width: 50%;
+            text-overflow:ellipsis;
+        }
+        
+        .picsChosen{
+            display: flex;
+            align-items: flex-start;
+            overflow: visible;
+            overflow-x: auto;
+            gap: min(4%,15px);
+        }
+        .picsChosen div{
+            position: relative;
+            padding-top:10px;
+        }
+        .picsChosen img{
+            max-width: calc(var(--baseFont) * 2);
+            max-height: calc(var(--baseFont) * 2);
+        }
+
+        .picsChosen button{
+            height: 15px;
+            width: 15px;
+            color: white;
+            background-color: rgba(169, 169, 169, 0.5);
+            position: absolute;
+            right: 0;
+            top:10px ;
+            transform: translate(50%,-50%);
+            border-radius: 50%;
+            background-image: url(close.png);
+            background-size: 50% 50%;
+            background-repeat: no-repeat;
+            background-position: center center;
+        }
+
+        #typingIndicator>img{
+            
+            height: calc(1.3 * var(--baseFont));
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        #typingIndicator{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: calc(0.6 * var(--baseFont));
+            color: rgb(166, 166, 166); 
+        }
+        #typingIndicator::after{
+            content: "•••";
+            animation-name: typing;
+            animation-duration: 3s;
+            animation-iteration-count: infinite;
+            margin-left: -5px;
+        }
+        @keyframes typing {
+            100%{
+                content: "••• ";
+            }
+            25%,75%{
+                content: "•• ";
+            }
+            50%{
+                content: "• ";
+            }
+        }
