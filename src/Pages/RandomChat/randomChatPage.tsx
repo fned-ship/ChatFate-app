@@ -76,12 +76,13 @@ function PartnerOverlay({ status }: { status: PartnerStatus }) {
     }}>
       {cfg.spin && (
         <div style={{
-          width:          52,
-          height:         52,
-          borderRadius:   '50%',
-          border:         `3px solid ${cfg.accent}`,
-          borderTopColor: 'transparent',
-          animation:      'spin 0.9s linear infinite',
+          width:            52,
+          height:           52,
+          borderRadius:     '50%',
+          borderWidth:      3,
+          borderStyle:      'solid',
+          borderColor:      `transparent transparent transparent ${cfg.accent}`,
+          animation:        'spin 0.9s linear infinite',
         }} />
       )}
 
