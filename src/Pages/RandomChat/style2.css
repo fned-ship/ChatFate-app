@@ -75,7 +75,7 @@
 
         .videoscreen{
             flex: 1;
-            background-image: url("adem.jpg");
+            background-image: url("unknown.jpg");
             
             background-size: cover;
             background-position: center center;
@@ -96,7 +96,7 @@
             object-fit: cover;
         }
         .second{
-            background-image: url("fned.jpg");
+            background-image: url("unknown.jpg");
         }
         .sticker{
             padding: 2%;
@@ -110,6 +110,7 @@
             align-items: center;
             gap: 8%;
             box-sizing: border-box;
+            z-index: 1;
         }
 
         .sticker>img{
