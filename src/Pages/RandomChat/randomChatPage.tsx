@@ -12,9 +12,6 @@ const socket: Socket = io(import.meta.env.VITE_SERVER_URL, {
   auth: { userId: currentUserId }
 });
 
-// ── ICE config ────────────────────────────────────────────────────────────────
-// Multiple STUN servers + a free TURN from Metered for cross-NAT support.
-// Replace the TURN credentials with your own for production reliability.
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302'  },
@@ -41,57 +38,31 @@ const ICE_SERVERS: RTCConfiguration = {
 
 type PartnerStatus = 'searching' | 'connecting' | 'connected' | 'left';
 
-// ── Overlay config ────────────────────────────────────────────────────────────
 const OVERLAY_CONFIG: Record<
   Exclude<PartnerStatus, 'connected'>,
   { icon: string; line1: string; line2: string; accent: string; spin: boolean }
 > = {
-  searching: {
-    icon:   '🔍',
-    line1:  'Finding you a partner…',
-    line2:  'This usually takes a few seconds',
-    accent: '#6c63ff',
-    spin:   true,
-  },
-  connecting: {
-    icon:   '⚡',
-    line1:  'Partner found!',
-    line2:  'Establishing connection…',
-    accent: '#f0a500',
-    spin:   true,
-  },
-  left: {
-    icon:   '👋',
-    line1:  'Partner left the chat',
-    line2:  'Hit Skip to find someone new',
-    accent: '#e05252',
-    spin:   false,
-  },
+  searching:  { icon: '🔍', line1: 'Finding you a partner…',   line2: 'This usually takes a few seconds', accent: '#6c63ff', spin: true  },
+  connecting: { icon: '⚡', line1: 'Partner found!',            line2: 'Establishing connection…',         accent: '#f0a500', spin: true  },
+  left:       { icon: '👋', line1: 'Partner left the chat',     line2: 'Hit Skip to find someone new',     accent: '#e05252', spin: false },
 };
 
 function PartnerOverlay({ status }: { status: PartnerStatus }) {
   if (status === 'connected') return null;
   const cfg = OVERLAY_CONFIG[status];
-
   return (
     <div style={{
-      position: 'absolute', inset: 0,
-      display: 'flex', flexDirection: 'column',
+      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', gap: 12,
-      background: 'rgba(8, 8, 18, 0.85)',
-      backdropFilter: 'blur(8px)',
-      borderRadius: 'inherit',
-      zIndex: 10,
+      background: 'rgba(8,8,18,0.85)', backdropFilter: 'blur(8px)',
+      borderRadius: 'inherit', zIndex: 10,
     }}>
       {cfg.spin && (
         <div style={{
-          width:       52,
-          height:      52,
-          borderRadius: '50%',
-          borderWidth:  3,
-          borderStyle:  'solid',
-          borderColor:  `transparent transparent transparent ${cfg.accent}`,
-          animation:    'spin 0.9s linear infinite',
+          width: 52, height: 52, borderRadius: '50%',
+          borderWidth: 3, borderStyle: 'solid',
+          borderColor: `transparent transparent transparent ${cfg.accent}`,
+          animation: 'spin 0.9s linear infinite',
         }} />
       )}
       <span style={{ fontSize: cfg.spin ? 26 : 44, lineHeight: 1 }}>{cfg.icon}</span>
@@ -106,22 +77,14 @@ function PartnerOverlay({ status }: { status: PartnerStatus }) {
   );
 }
 
-// ── Safe peer destroy ─────────────────────────────────────────────────────────
-// simple-peer can throw "_readableState undefined" if destroyed while a stream
-// event is in flight. Wrapping destroy() in a try/catch + nextTick prevents this.
 function safePeerDestroy(peer: Instance | null) {
   if (!peer) return;
   try {
-    // Remove all listeners first so no callbacks fire after destroy
     peer.removeAllListeners();
-    // Defer the actual destroy one tick so any in-flight emit finishes
-    setTimeout(() => {
-      try { peer.destroy(); } catch (_) { /* already gone */ }
-    }, 0);
-  } catch (_) { /* already gone */ }
+    setTimeout(() => { try { peer.destroy(); } catch (_) {} }, 0);
+  } catch (_) {}
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
 function RandomChatPage() {
   const [partnerId,      setPartnerId]      = useState('');
   const [randomChatData, setRandomChatData] = useState<any>(null);
@@ -132,13 +95,20 @@ function RandomChatPage() {
   const myVideo   = useRef<HTMLVideoElement>(null);
   const userVideo = useRef<HTMLVideoElement>(null);
   const peerRef   = useRef<Instance | null>(null);
-  const streamRef = useRef<MediaStream | undefined>();
+
+  // Stream stored in a ref AND resolved via a promise so any code can
+  // await it instead of checking a potentially-undefined ref.
+  const streamRef         = useRef<MediaStream | undefined>();
+  const streamResolverRef = useRef<((s: MediaStream) => void) | null>(null);
+  const streamPromiseRef  = useRef<Promise<MediaStream>>(
+    new Promise(resolve => { streamResolverRef.current = resolve; })
+  );
 
   const iAmInitiatorRef = useRef(false);
   const matchActiveRef  = useRef(false);
   const randomChatIdRef = useRef<string | null>(null);
 
-  // ── Peer teardown ─────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const destroyPeer = useCallback(() => {
     safePeerDestroy(peerRef.current);
     peerRef.current = null;
@@ -153,117 +123,80 @@ function RandomChatPage() {
     if (myVideo.current) myVideo.current.srcObject = null;
   }, []);
 
-  // ── Build a peer — shared logic ───────────────────────────────────────────
-  // trickle: true  → candidates are sent incrementally as they are discovered,
-  //                  which is far more reliable across different networks / NATs.
-  // With trickle=true the 'signal' event fires multiple times (once for the
-  // offer/answer SDP, then once per ICE candidate), so the server must forward
-  // ALL of them — which your existing callUser / answerCall / callAccepted
-  // events already do correctly.
-  const buildPeer = useCallback((
-    initiator:   boolean,
-    localStream: MediaStream,
-  ): Instance => {
-    return new Peer({
-      initiator,
-      trickle: true,           // ← changed from false; critical for cross-network
-      stream:  localStream,
-      config:  ICE_SERVERS,
-    });
+  const buildPeer = useCallback((initiator: boolean, localStream: MediaStream): Instance => {
+    return new Peer({ initiator, trickle: true, stream: localStream, config: ICE_SERVERS });
   }, []);
 
-  // ── Attach common stream/error/close handlers ─────────────────────────────
   const attachCommonHandlers = useCallback((peer: Instance) => {
     peer.on('stream', (incoming: MediaStream) => {
-      // Guard: if we already destroyed this peer, don't touch state
       if (peerRef.current !== peer) return;
       setRemoteStream(incoming);
       setCallAccepted(true);
       setPartnerStatus('connected');
     });
-
     peer.on('error', (err: Error) => {
-      // Guard: only log if this peer is still the active one
       if (peerRef.current !== peer) return;
       console.error('[RTC] Peer error:', err.message);
     });
-
     peer.on('close', () => {
       if (peerRef.current !== peer) return;
-      console.log('[RTC] Peer connection closed');
+      console.log('[RTC] Peer closed');
     });
   }, []);
 
-  // ── Initiator (caller) ────────────────────────────────────────────────────
+  // ── Initiator ─────────────────────────────────────────────────────────────
   const startCall = useCallback((targetUserId: string, localStream: MediaStream) => {
-    console.log('[RTC] Starting call → initiator (trickle=true)');
-
+    console.log('[RTC] Starting call → initiator');
     const peer = buildPeer(true, localStream);
     peerRef.current = peer;
 
-    // Each signal event must be forwarded (offer SDP + each ICE candidate)
     peer.on('signal', (data: SignalData) => {
       if (peerRef.current !== peer) return;
-      console.log('[RTC] Initiator signal:', (data as any).type ?? 'candidate');
-      socket.emit('callUser', {
-        userToCall: targetUserId,
-        signalData: data,
-        from:       currentUserId,
-      });
+      socket.emit('callUser', { userToCall: targetUserId, signalData: data, from: currentUserId });
     });
 
-    // callAccepted fires once for the answer SDP, then once per ICE candidate
     const onCallAccepted = (signal: SignalData) => {
       if (peerRef.current !== peer || (peer as any).destroyed) return;
-      console.log('[RTC] callAccepted signal:', (signal as any).type ?? 'candidate');
-      try { peer.signal(signal); } catch (e) { console.warn('[RTC] signal() after destroy ignored'); }
+      try { peer.signal(signal); } catch (_) {}
     };
-    // Use .on (not .once) because trickle sends multiple signals
     socket.on('callAccepted', onCallAccepted);
 
     attachCommonHandlers(peer);
-
-    // Clean up the socket listener when this peer dies
     peer.on('close', () => socket.off('callAccepted', onCallAccepted));
     peer.on('error', () => socket.off('callAccepted', onCallAccepted));
   }, [buildPeer, attachCommonHandlers]);
 
-  // ── Callee (receiver) ─────────────────────────────────────────────────────
+  // ── Callee ────────────────────────────────────────────────────────────────
   const receiveCall = useCallback((callerDbId: string, offerSignal: SignalData, localStream: MediaStream) => {
-    console.log('[RTC] Receiving call → callee (trickle=true)');
-
+    console.log('[RTC] Receiving call → callee');
     const peer = buildPeer(false, localStream);
     peerRef.current = peer;
 
-    // Each answer SDP + ICE candidate must be sent back
     peer.on('signal', (data: SignalData) => {
       if (peerRef.current !== peer) return;
-      console.log('[RTC] Callee signal:', (data as any).type ?? 'candidate');
       socket.emit('answerCall', { signal: data, to: callerDbId });
     });
 
     attachCommonHandlers(peer);
-
-    // Feed the offer — after all listeners are attached
-    try { peer.signal(offerSignal); } catch (e) { console.warn('[RTC] initial signal() failed:', e); }
+    try { peer.signal(offerSignal); } catch (e) { console.warn('[RTC] signal() failed:', e); }
   }, [buildPeer, attachCommonHandlers]);
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    // 1. Camera / mic
+    // 1. Get camera/mic — resolve the promise when ready
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(localStream => {
         streamRef.current = localStream;
         if (myVideo.current) myVideo.current.srcObject = localStream;
+        // Unblock anyone who was awaiting the stream
+        streamResolverRef.current?.(localStream);
+        streamResolverRef.current = null;
       })
       .catch(err => console.error('[Media] getUserMedia failed:', err));
 
-    // 2. Match found
-    socket.on('partner_found', (data: any) => {
-      if (matchActiveRef.current) {
-        console.warn('[Match] Duplicate partner_found — ignored');
-        return;
-      }
+    // 2. Partner found — await the stream before proceeding
+    socket.on('partner_found', async (data: any) => {
+      if (matchActiveRef.current) return;
       matchActiveRef.current = true;
 
       const foundPartnerId: string = data.partnerId;
@@ -281,33 +214,34 @@ function RandomChatPage() {
       console.log('[RTC] Role:', iAmInitiatorRef.current ? 'INITIATOR' : 'CALLEE');
 
       if (iAmInitiatorRef.current) {
-        // 800 ms gives the callee time to register its 'callUser' listener
-        setTimeout(() => {
-          if (streamRef.current) {
-            startCall(foundPartnerId, streamRef.current);
-          } else {
-            console.error('[RTC] No local stream — cannot start call');
-          }
-        }, 800);
+        // ← CORE FIX: await the stream promise instead of checking streamRef.current
+        // If getUserMedia already resolved, this returns immediately.
+        // If it hasn't resolved yet, we wait here until it does.
+        console.log('[RTC] Waiting for local stream…');
+        const localStream = await streamPromiseRef.current;
+        console.log('[RTC] Stream ready — starting call');
+
+        // Extra 600 ms so the callee has time to attach its callUser listener
+        await new Promise(r => setTimeout(r, 600));
+
+        // Make sure the match is still active (user didn't skip while waiting)
+        if (matchActiveRef.current) {
+          startCall(foundPartnerId, localStream);
+        }
       }
     });
 
-    // 3. Incoming offer signals (callee) + trickle ICE candidates from initiator
-    socket.on('callUser', (data: { signal: SignalData; from: string }) => {
-      if (iAmInitiatorRef.current) return; // not for us
+    // 3. Incoming offer/candidates (callee only)
+    socket.on('callUser', async (data: { signal: SignalData; from: string }) => {
+      if (iAmInitiatorRef.current) return;
 
-      if (!streamRef.current) {
-        console.error('[RTC] No local stream — cannot answer');
-        return;
-      }
+      // Same fix for the callee: await stream before answering
+      const localStream = await streamPromiseRef.current;
 
-      // First callUser event → create the peer and feed the offer
-      // Subsequent callUser events → feed trickle ICE candidates into existing peer
       if (!peerRef.current) {
-        receiveCall(data.from, data.signal, streamRef.current);
+        receiveCall(data.from, data.signal, localStream);
       } else if (!(peerRef.current as any).destroyed) {
-        console.log('[RTC] Callee feeding trickle candidate');
-        try { peerRef.current.signal(data.signal); } catch (e) { /* ignore post-destroy */ }
+        try { peerRef.current.signal(data.signal); } catch (_) {}
       }
     });
 
@@ -361,7 +295,6 @@ function RandomChatPage() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Attach remote stream to <video>
   useEffect(() => {
     if (callAccepted && remoteStream && userVideo.current) {
       userVideo.current.srcObject = remoteStream;
@@ -371,7 +304,6 @@ function RandomChatPage() {
   // ── Matchmaking trigger ───────────────────────────────────────────────────
  
 
-  // ── Skip ──────────────────────────────────────────────────────────────────
   const handleSkip = useCallback(() => {
     if (randomChatIdRef.current) {
       socket.emit('leave_random_chat', { randomChatId: randomChatIdRef.current });
