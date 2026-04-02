@@ -322,6 +322,21 @@ function RandomChatPage() {
       matchActiveRef.current  = false;
       iAmInitiatorRef.current = false;
     });
+    
+    
+    const triggerSearch = () => {
+    setPartnerStatus('searching');
+    fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => console.log('[Match] Request sent:', d.message ?? d))
+      .catch(err => {
+        console.error('[Match] Error:', err);
+        setPartnerStatus('searching');
+      });
+  };
 
     // 5. Start matchmaking
     triggerSearch();
@@ -354,19 +369,7 @@ function RandomChatPage() {
   }, [callAccepted, remoteStream]);
 
   // ── Matchmaking trigger ───────────────────────────────────────────────────
-  const triggerSearch = () => {
-    setPartnerStatus('searching');
-    fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => console.log('[Match] Request sent:', d.message ?? d))
-      .catch(err => {
-        console.error('[Match] Error:', err);
-        setPartnerStatus('searching');
-      });
-  };
+ 
 
   // ── Skip ──────────────────────────────────────────────────────────────────
   const handleSkip = useCallback(() => {
