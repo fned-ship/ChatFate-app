@@ -4,9 +4,11 @@ import Peer, { SignalData, Instance } from "simple-peer";
 import './style2.css';
 import ChatBoxComp from "../../Components/chatBox";
 import Cookies from 'js-cookie';
+import ReactCountryFlag from 'react-country-flag';
 
 const token         = Cookies.get('token');
 const currentUserId = Cookies.get('userId');
+const user = JSON.parse(Cookies.get('user'));
 const colors =["#065535","#133337","#008080","#e6e6fa","#003366","#800000","#ff4040",
     "#065535","#133337","#008080","#e6e6fa","#003366","#800000","#ff4040","#065535"]
 
@@ -254,6 +256,7 @@ function RandomChatPage() {
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   useEffect(() => {
+    console.log(user);
     // 1. Camera / mic
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(localStream => {
@@ -296,7 +299,7 @@ function RandomChatPage() {
           } else {
             console.error('[RTC] No local stream — cannot start call');
           }
-        }, 800);
+        }, 2000);
       }
     });
 
@@ -406,6 +409,21 @@ function RandomChatPage() {
     triggerSearch();
   }, [destroyPeer]);
 
+  //add friend 
+  const addFriend=()=>{
+    if(partnerId!=""){
+      fetch(`${import.meta.env.VITE_SERVER_URL}/api/friends/request/${partnerId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.json())
+        .then(d => console.log('[friend] Request sent:', d.message ?? d))
+        .catch(err => {
+          console.error('[friend request] Error:', err);
+        });
+    }
+  }
+
   return (
     <main className="randomchatpage">
       <span className="brand">hatFate</span>
@@ -424,7 +442,7 @@ function RandomChatPage() {
 
           <div className="videoscreen">
             <div className="sticker">
-              <img src="download.png" alt="" />
+              <ReactCountryFlag countryCode={user.country} svg style={{ width: '2em', height: '2em' }} />
               <span>You</span>
             </div>
             <video autoPlay muted ref={myVideo} />
@@ -432,8 +450,8 @@ function RandomChatPage() {
 
           <div className="videoscreen second" style={{ position: 'relative', overflow: 'hidden' }}>
             <div className="sticker">
-              <img src="download.png" alt="" />
-              <span>{callAccepted ? 'Partner' : '…'}</span>
+              {partnerData && <ReactCountryFlag className="countryFlag"countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />}
+              <span>{callAccepted ? partnerData.userName : '…'}</span>
             </div>
             <video
               autoPlay
@@ -449,7 +467,7 @@ function RandomChatPage() {
           {randomChatData && <ChatBoxComp type="random" socket={socket} currentUserId={currentUserId} partnerId={partnerId}  randomChatData={randomChatData} chatId={randomChatIdRef.current} partnerData={partnerData}  />}
           <div className="chatbuttons">
             <button className="btn skip"   onClick={handleSkip}>Skip</button>
-            <button className="btn friend" disabled={!callAccepted}>Add Friend</button>
+            <button className="btn friend" onClick={addFriend} disabled={!callAccepted}>Add Friend</button>
             <button className="btn report" disabled={!callAccepted}>!</button>
           </div>
         </div>

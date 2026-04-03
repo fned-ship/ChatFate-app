@@ -45,7 +45,7 @@ const Profile = () => {
     <div className="rest">
         <div className="friendList">
             <div className="profile">
-                <img src={`${import.meta.env.VITE_SERVER}/imagesProfile/${me.photo}`} alt=""/>
+                <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${me.photo}`} alt=""/>
                 <span>Welcome back, {me.userName} !  </span> 
                 <svg   xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 600 600" version="1.1">
   <g  transform="matrix(0.95173205,0,0,0.95115787,13.901174,12.168794)" >
@@ -66,18 +66,20 @@ const Profile = () => {
             {chats.map(friend=>(
                 <div className="message" key={friend._id}>
                 <div className="friendProfile active">
-                    <img  src="/user4.jpg" alt=""/>
+                    <img  src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${friend.participants[0]._id==me._id?
+                        friend.participants[1].photo:friend.participants[0].photo}`} alt=""/>
                 </div>
                     
                 <div className="content">
                     <span>
-                        {JSON.stringify(friend)}
+                        { friend.participants[0]._id==me._id?
+                        friend.participants[1].userName:friend.participants[0].userName}
                     </span>
                     <div >
                         <span className="lastMessage">
                             {friend.lastMessage || "Start a conversation"}
                         </span>
-                        <span>• {friend.lastUpdated}</span>
+                        <span>• {new Date(friend.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 </div>
             </div>
@@ -91,13 +93,13 @@ const Profile = () => {
   </div>
 ))}
         </div>
-        <div className="chatbox"   style={{display:'none'}} >
+        {/* <div className="chatbox"   style={{display:'none'}} >
             <div className="chatHeader">
                 <div className="friendProfile active"> <img src="/user4.jpg" alt=""/></div>
                 Sabrina Carpenter
             </div>
             <ChatBoxComp type="none" />
-        </div>
+        </div> */}
         <div className="random"  >
             <span>Hop into a random chat and see what fate has in store for you </span>
             <div className="buttons">
