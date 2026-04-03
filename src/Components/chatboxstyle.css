@@ -41,11 +41,19 @@
 
         }
 
+        .myMessage .actions{
+            left: -80px;
+        }
+        .otherMessage .actions{
+            right: -80px;
+        }
+
         .actions{
+            width: 70px;
             position: absolute;
-            bottom: -2%;
+            top: 50%;
             background-color: inherit;
-            transform: translateY(100%);
+            transform: translateY(-50%);
             display: flex;
             padding-block: min(1vh,1vw,10px);
             padding-inline: min(3vh,3vw,20px);
@@ -54,9 +62,9 @@
             justify-content: center;
             border-radius: 50vh;
         }
-        .otherMessage > .actions{
+        /* .otherMessage > .actions{
             left: var(--baseFont);
-        }
+        } */
         .otherMessage{
             background-color: var(--mainPurple);
         }
@@ -142,6 +150,12 @@
             overflow: visible;
             overflow-x: auto;
             gap: min(4%,15px);
+            background: #0000006b;
+    position: absolute;
+    width: calc(100% - 70px);
+    bottom: 70px;
+    padding: 10px;
+    border-radius: 10px;
         }
         .picsChosen div{
             position: relative;
@@ -199,4 +213,9 @@
             50%{
                 content: "• ";
             }
+        }
+
+        .chat-img{
+            object-fit: cover;
+            width: 100px;
         }
