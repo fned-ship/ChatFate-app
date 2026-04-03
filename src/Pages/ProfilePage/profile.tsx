@@ -1,7 +1,28 @@
 import './styleProfile.css'
 import ChatBoxComp from '../../Components/chatBox';
 import SearchBar from '../../Components/searchBar';
+import { useEffect, useState } from 'react';
+import { getMyChats } from '../../services/chatServices';
+import { getFriendRequests ,acceptFriendRequest} from '../../services/userServices';
+import Cookies from 'js-cookie';
+
+const me=JSON.parse(Cookies.get('user'))
+
 const Profile = () => {
+    
+    const [showrequests,setShowRequests]=useState<boolean>(false)
+    const [chats,setChats]=useState([])
+    const [requests,setrequests]=useState([])
+
+    useEffect(()=>{
+        console.log(me)
+    getMyChats().then(res=>{setChats(res.data); console.log(chats)})
+
+    getFriendRequests().then(res=>setrequests(res.data))
+},[])
+
+
+
   return (
     <main className='profilepage'>
     <header>
@@ -24,8 +45,8 @@ const Profile = () => {
     <div className="rest">
         <div className="friendList">
             <div className="profile">
-                <img src="/me.jpg" alt=""/>
-                <span>Mohamed Adem Selmi </span> 
+                <img src={`${import.meta.env.VITE_SERVER}/imagesProfile/${me.photo}`} alt=""/>
+                <span>Welcome back, {me.userName} !  </span> 
                 <svg   xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 600 600" version="1.1">
   <g  transform="matrix(0.95173205,0,0,0.95115787,13.901174,12.168794)" >
     <path   d="M 447.70881 -12.781343 A 42.041451 42.041451 0 0 0 405.66786 29.260344 L 405.66786 50.301721 L 27.434765 50.301721 A 42.041302 42.041302 0 0 0 -14.606185 92.341354 A 42.041302 42.041302 0 0 0 27.434765 134.38304 L 405.66786 134.38304 L 405.66786 155.44906 A 42.041451 42.041451 0 0 0 447.70881 197.49075 A 42.041451 42.041451 0 0 0 489.74976 155.44906 L 489.74976 134.38304 L 573.78036 134.38304 A 42.041302 42.041302 0 0 0 615.82336 92.341354 A 42.041302 42.041302 0 0 0 573.78036 50.301721 L 489.74976 50.301721 L 489.74976 29.260344 A 42.041451 42.041451 0 0 0 447.70881 -12.781343 z M 143.0012 197.48869 A 42.041451 42.041451 0 0 0 100.9582 239.53038 L 100.9582 260.5697 L 27.447078 260.5697 A 42.041302 42.041302 0 0 0 -14.593872 302.61139 A 42.041302 42.041302 0 0 0 27.447078 344.65308 L 100.9582 344.65308 L 100.9582 365.7191 A 42.041451 42.041451 0 0 0 143.0012 407.76078 A 42.041451 42.041451 0 0 0 185.04215 365.7191 L 185.04215 344.65308 L 573.79472 344.65308 A 42.041302 42.041302 0 0 0 615.83567 302.61139 A 42.041302 42.041302 0 0 0 573.79472 260.5697 L 185.04215 260.5697 L 185.04215 239.53038 A 42.041451 42.041451 0 0 0 143.0012 197.48869 z M 279.59427 407.76078 A 42.041451 42.041451 0 0 0 237.55332 449.80042 L 237.55332 470.83974 L 27.447078 470.83974 A 42.041302 42.041302 0 0 0 -14.593872 512.88143 A 42.041302 42.041302 0 0 0 27.447078 554.92106 L 237.55332 554.92106 L 237.55332 575.98913 A 42.041451 42.041451 0 0 0 279.59427 618.02877 A 42.041451 42.041451 0 0 0 321.63522 575.98913 L 321.63522 554.92106 L 573.79472 554.92106 A 42.041302 42.041302 0 0 0 615.83567 512.88143 A 42.041302 42.041302 0 0 0 573.79472 470.83974 L 321.63522 470.83974 L 321.63522 449.80042 A 42.041451 42.041451 0 0 0 279.59427 407.76078 z "/>
@@ -42,24 +63,33 @@ const Profile = () => {
 
                 </div>
                 <SearchBar/>
-            
-            <div className="message">
+            {chats.map(friend=>(
+                <div className="message" key={friend._id}>
                 <div className="friendProfile active">
                     <img  src="/user4.jpg" alt=""/>
                 </div>
                     
                 <div className="content">
                     <span>
-                        Youssef Fned
+                        {JSON.stringify(friend)}
                     </span>
                     <div >
                         <span className="lastMessage">
-                            ya5dem mrgl
+                            {friend.lastMessage || "Start a conversation"}
                         </span>
-                        <span>• 4:11pm</span>
+                        <span>• {friend.lastUpdated}</span>
                     </div>
                 </div>
             </div>
+            ))}
+            
+            {requests.map(user => (
+  <div key={user._id}>
+    <img src={user.photo} alt={user.userName} />
+    <p>{user.firstName} wants to be your friend!</p>
+    <button onClick={() => acceptFriendRequest(user._id)}>Accept</button>
+  </div>
+))}
         </div>
         <div className="chatbox"   style={{display:'none'}} >
             <div className="chatHeader">

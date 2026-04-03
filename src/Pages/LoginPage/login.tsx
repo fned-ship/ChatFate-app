@@ -19,7 +19,7 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const response = await fetch('https://chatfate-server.onrender.com'+'/api/auth/login', {
+            const response = await fetch(import.meta.env.VITE_SERVER+'/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -34,7 +34,8 @@ const Login = () => {
             // --- Store in Cookies ---
             // expires: 7 means the cookie lasts for 7 days (matches your JWT)
             Cookies.set('token', data.token, { expires: 7, secure: true, sameSite: 'strict' });
-            Cookies.set('userId', data.user._doc._id, { expires: 7, secure: true, sameSite: 'strict' });
+            console.log(data.user._doc)
+            Cookies.set('user', JSON.stringify(data.user._doc), { expires: 7, secure: true, sameSite: 'strict' });
 
             console.log('Login Successful! , '+data.user._doc._id);
             // Redirect user to the Match/Video page

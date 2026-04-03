@@ -98,7 +98,7 @@
             border-radius: 50%;
         }
         .profile>span{
-            font-size: calc(0.7 * var(--baseFont));
+            font-size: calc(0.6 * var(--baseFont));
             font-weight: bold;
             width: 50%;
             overflow: hidden;

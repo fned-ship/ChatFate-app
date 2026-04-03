@@ -98,7 +98,7 @@ function RandomChatPage() {
 
   // Stream stored in a ref AND resolved via a promise so any code can
   // await it instead of checking a potentially-undefined ref.
-  const streamRef         = useRef<MediaStream | undefined>();
+  const streamRef         = useRef<MediaStream | undefined>(null);
   const streamResolverRef = useRef<((s: MediaStream) => void) | null>(null);
   const streamPromiseRef  = useRef<Promise<MediaStream>>(
     new Promise(resolve => { streamResolverRef.current = resolve; })
