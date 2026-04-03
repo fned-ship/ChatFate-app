@@ -113,12 +113,12 @@
             z-index: 1;
         }
 
-        .sticker>img{
+        .sticker>.countryFlag{
             height:  var(--baseFont2) ;
-            aspect-ratio: 1/1;
+            /* aspect-ratio: 1/1;
             border-radius: 50%;
             object-fit: cover;
-            object-position: center center;
+            object-position: center center; */
             
         }
         .sticker>span{
