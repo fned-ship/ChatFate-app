@@ -13,7 +13,7 @@ const config = {
 
 const serverURL=import.meta.env.VITE_SERVER_URL ;
 
-const ChatBoxComp = ({ type, socket, currentUserId, partnerId, randomChatData, chatId , partnerData }: any) => {
+const ChatBoxComp = ({ type, socket, currentUserId, partnerId, chatData, chatId , partnerData }: any) => {
     const [messages, setMessages] = useState<any[]>([]);
     const [inputText, setInputText] = useState("");
     const [isPartnerTyping, setIsPartnerTyping] = useState(false);
@@ -23,7 +23,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, partnerId, randomChatData, c
 
     const typingTimeoutRef = useRef(null);
 
-    const activeChatId = type === 'random' ? randomChatData?._id : chatId;
+    const activeChatId = type === 'random' ? chatData?._id : chatId;
 
     // IMPORTANT: You need to EMIT the correct event name too!
     const handleInputChange = (e: any) => {
@@ -123,7 +123,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, partnerId, randomChatData, c
             });
 
             const url = type === 'random' 
-                ? `http://localhost:3003/api/random-chats/${activeChatId}/messages` 
+                ? `${serverURL}/api/random-chats/${activeChatId}/messages` 
                 : `${serverURL}/api/chats/${activeChatId}/messages`;
             
             await axios.post(url, formData , config);
@@ -168,7 +168,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, partnerId, randomChatData, c
                 {isPartnerTyping && (
                     <div id='typingIndicator' style={{ display: "flex" , paddingTop:"40px" }}>
                         <img src={`${serverURL}/imagesProfile/${partnerData.photo}`} alt="" />
-                        <span>partner is typing...</span>
+                        <span>{partnerData.userName} is typing</span>
                     </div>
                 )}
                 <div ref={scrollRef} />
