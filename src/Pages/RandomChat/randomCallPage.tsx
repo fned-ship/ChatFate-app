@@ -91,7 +91,7 @@ function safePeerDestroy(peer: Instance | null) {
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-function RandomChatPage() {
+function RandomCallPage() {
   const [partnerId,      setPartnerId]      = useState('');
   const [randomChatData, setRandomChatData] = useState<any>(null);
   const [callAccepted,   setCallAccepted]   = useState(false);
@@ -360,7 +360,6 @@ function RandomChatPage() {
   };
 
   // ── Skip ──────────────────────────────────────────────────────────────────
-  //I hope this works
   const handleSkip = useCallback(() => {
     if (randomChatIdRef.current) {
       socket.emit('leave_random_chat', { randomChatId: randomChatIdRef.current });
@@ -413,8 +412,8 @@ function RandomChatPage() {
 
           <div className="videoscreen second" style={{ position: 'relative', overflow: 'hidden' }}>
             <div className="sticker">
-              {partnerData && <ReactCountryFlag className="countryFlag"countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />}
-              <span>{callAccepted ? partnerData.userName : '…'}</span>
+              {partnerData && <ReactCountryFlag countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />}
+              <span>{callAccepted ? 'Partner' : '…'}</span>
             </div>
             <video
               autoPlay
@@ -447,4 +446,4 @@ function RandomChatPage() {
   );
 }
 
-export default RandomChatPage;
+export default RandomCallPage;

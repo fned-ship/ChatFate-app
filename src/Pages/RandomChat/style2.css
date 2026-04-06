@@ -173,6 +173,42 @@
         .report{
             width: 10%;
         }
+
+
+
+        .box{
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.681);
+            padding: 10px;
+            border-radius:10px;
+        }
+        .box #img {
+            width:100px;
+            height:100px;
+            object-fit: cover;
+            padding: 3px;
+            border:4px rgb(86, 5, 105) solid ;
+            border-radius: 50%;
+        }
+        .box .details{
+            display: flex;
+            flex-direction: column;
+            gap:20px;
+        }
+
+        .box .details p {
+            font-size: 1.2rem;
+            font-weight:600;
+        }
+        
+        
+
+
+
+
+
         @media screen and (max-aspect-ratio: 15/10) {
             .cams{
                 flex: 1;
@@ -195,13 +231,14 @@
                 overflow: visible;
             }
             .screen{
-                flex-direction: column;
+                flex-direction: column-reverse;
                 gap: 15px;
             }
             .videoscreen{
                 aspect-ratio: 3/2;
             }
             .chatcontainer{
+                height:200px;
                 aspect-ratio: 1/1;
             }
             .sticker{
