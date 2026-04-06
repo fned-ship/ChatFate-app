@@ -90,15 +90,25 @@
             position: relative;
             margin-bottom: calc(var(--baseFont) * 0.5 );
         }
-        .profile>img{
-            height: calc(2 * var(--baseFont ));
+       .request>img, .request>svg,.friendProfile>img{
+            height: 100%;
             aspect-ratio: 1/1;
             object-fit: cover;
             object-position: center center;
             border-radius: 50%;
+            
+        }
+        .request>span{
+            font-size: calc(var(--baseFont) * 0.5) ;
+            font-weight: bold;
+            color: white;
+            flex: 1;
+        }
+        .request>svg{
+            height: 70%;
         }
         .profile>span{
-            font-size: calc(0.7 * var(--baseFont));
+            font-size: calc(0.6 * var(--baseFont));
             font-weight: bold;
             width: 50%;
             overflow: hidden;

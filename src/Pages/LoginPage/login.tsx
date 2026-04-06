@@ -19,7 +19,7 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const response = await fetch('https://chatfate-server.onrender.com/api/auth/login', {
+            const response = await fetch(import.meta.env.VITE_SERVER_URL+'/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -39,7 +39,7 @@ const Login = () => {
 
             console.log('Login Successful! , '+data.user._doc._id);
             // Redirect user to the Match/Video page
-            // window.location.href = '/myAccount'; 
+             window.location.href = '/myAccount'; 
 
         } catch (err) {
             setError(err.message);
@@ -50,7 +50,7 @@ const Login = () => {
 
     return (
         <div style={styles.container}>
-            <form onSubmit={handleLogin} style={styles.form}>
+            <form style={styles.form} onSubmit={handleLogin} >
                 <h2>Login to VideoChat</h2>
                 
                 {error && <p style={styles.error}>{error}</p>}
@@ -86,7 +86,7 @@ const Login = () => {
 // Simple inline styles for quick testing
 const styles = {
     container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f4f4' },
-    form: { backgroundColor: '#fff', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', width: '300px' },
+    form: { backgroundColor: '#fff', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', display: 'flex', flexDirection:'column' as const, width: '300px' },
     input: { marginBottom: '15px', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' },
     button: { padding: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' },
     error: { color: 'red', fontSize: '14px', marginBottom: '10px' }

@@ -157,6 +157,7 @@ function RandomChatPage() {
   };
 
   // ── Skip ──────────────────────────────────────────────────────────────────
+  //I hope this works
   const handleSkip = useCallback(() => {
     if (randomChatIdRef.current) {
       socket.emit('leave_random_chat', { randomChatId: randomChatIdRef.current });

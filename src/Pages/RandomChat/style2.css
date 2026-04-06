@@ -115,10 +115,9 @@
 
         .sticker>.countryFlag{
             height:  var(--baseFont2) ;
-            /* aspect-ratio: 1/1;
+            aspect-ratio: 1/1;
             border-radius: 50%;
             object-fit: cover;
-            object-position: center center; */
             
         }
         .sticker>span{
@@ -132,8 +131,8 @@
             flex:1;
             display: flex;
             flex-direction: column;
-            gap: 50px;
-            justify-content: start;
+            gap: min(2%,10px);
+            justify-content: flex-end;
         }
         .chatbuttons{
             height: 10%;

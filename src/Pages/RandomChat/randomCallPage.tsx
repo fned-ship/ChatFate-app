@@ -431,9 +431,7 @@ function RandomCallPage() {
               type="random"
               socket={socket}
               currentUserId={currentUserId}
-              partnerId={partnerId}
-              chatData={randomChatData}
-              chatId={randomChatIdRef.current}
+              chatId={randomChatData._id}
               partnerData={partnerData}
             />
           )}
