@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import Profile from './Pages/ProfilePage/profile';
 import Login from './Pages/LoginPage/login';
-import RandomChatPage from './Pages/RandomChat/randomChatPage';
+import RandomChatPage from './Pages/RandomChat/randomCallPage';
 import EditInterests from './Pages/PickInterest/EditInterests';
 function App() {
   
