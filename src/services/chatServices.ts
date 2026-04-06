@@ -3,6 +3,12 @@ import api from "./api";
 // Get list of friend chats
 export const getMyChats = () => api.get('/api/chats');
 
+
+
+export const getChat=(participantId)=>api.post('/api/chats',{participantId});
+
+
+
 // Get messages (paginated)
 export const getMessages = (chatId, page = 1) => 
   api.get(`/api/chats/${chatId}/messages?page=${page}`);

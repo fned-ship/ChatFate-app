@@ -9,25 +9,15 @@ import ReactCountryFlag from 'react-country-flag';
 const token         = Cookies.get('token');
 const currentUserId = Cookies.get('userId');
 const user          = JSON.parse(Cookies.get('user') ?? '{}');
+const colors        = ["#065535","#133337","#008080","#e6e6fa","#003366","#800000","#ff4040",
+                       "#065535","#133337","#008080","#e6e6fa","#003366","#800000","#ff4040","#065535"];
 
-const colors = [
-  "#065535","#133337","#008080","#e6e6fa","#003366",
-  "#800000","#ff4040","#065535","#133337","#008080",
-  "#e6e6fa","#003366","#800000","#ff4040","#065535",
-];
-
+// Module-level socket — one instance for the lifetime of the page
 const socket: Socket = io(import.meta.env.VITE_SERVER_URL, {
   auth: { userId: currentUserId }
 });
 
-// ── ICE config ────────────────────────────────────────────────────────────────
-// fetchIceServers() calls Metered's free-tier API at runtime to get short-lived
-// TURN credentials — far more reliable than hardcoded openrelay credentials.
-// Sign up free at https://www.metered.ca/ and put your subdomain + API key in
-// your .env:  VITE_METERED_SUBDOMAIN=yourapp  VITE_METERED_API_KEY=xxxx
-//
-// Fallback: if the fetch fails we still try with Google STUN only (works on
-// same-network calls but may fail across different NATs).
+// Fetch Metered ICE servers once at module load
 async function fetchIceServers(): Promise<RTCIceServer[]> {
   const subdomain = import.meta.env.VITE_METERED_SUBDOMAIN;
   const apiKey    = import.meta.env.VITE_METERED_API_KEY;
@@ -38,24 +28,22 @@ async function fetchIceServers(): Promise<RTCIceServer[]> {
     { urls: 'stun:stun2.l.google.com:19302' },
   ];
 
-  // If no Metered credentials configured, use fallback STUN only
   if (!subdomain || !apiKey) {
-    console.warn('[ICE] No Metered credentials — using STUN only (cross-NAT calls may fail)');
+    console.warn('[ICE] No Metered credentials — using STUN only');
     return fallback;
   }
-
   try {
-    const res  = await fetch(
-      `https://${subdomain}.metered.live/api/v1/turn/credentials?apiKey=${apiKey}`
-    );
+    const res  = await fetch(`https://${subdomain}.metered.live/api/v1/turn/credentials?apiKey=${apiKey}`);
     const data = await res.json();
     console.log('[ICE] Fetched', data.length, 'ICE servers from Metered');
     return data as RTCIceServer[];
   } catch (err) {
-    console.error('[ICE] Failed to fetch Metered credentials, using STUN fallback:', err);
+    console.error('[ICE] Metered fetch failed, using STUN fallback:', err);
     return fallback;
   }
 }
+
+const iceServersPromise = fetchIceServers();
 
 type PartnerStatus = 'searching' | 'connecting' | 'connected' | 'left';
 
@@ -87,12 +75,8 @@ function PartnerOverlay({ status }: { status: PartnerStatus }) {
         }} />
       )}
       <span style={{ fontSize: cfg.spin ? 26 : 44, lineHeight: 1 }}>{cfg.icon}</span>
-      <p style={{ color: '#fff', fontWeight: 600, fontSize: 15, margin: 0, textAlign: 'center', padding: '0 16px' }}>
-        {cfg.line1}
-      </p>
-      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0, textAlign: 'center', padding: '0 16px' }}>
-        {cfg.line2}
-      </p>
+      <p style={{ color: '#fff', fontWeight: 600, fontSize: 15, margin: 0, textAlign: 'center', padding: '0 16px' }}>{cfg.line1}</p>
+      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0, textAlign: 'center', padding: '0 16px' }}>{cfg.line2}</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -119,23 +103,18 @@ function RandomChatPage() {
   const myVideo   = useRef<HTMLVideoElement>(null);
   const userVideo = useRef<HTMLVideoElement>(null);
   const peerRef   = useRef<Instance | null>(null);
+  const streamRef = useRef<MediaStream | undefined>();
 
-  // Stream promise: resolves as soon as getUserMedia succeeds.
-  // Any code can await this instead of polling streamRef.current.
-  const streamRef         = useRef<MediaStream | undefined>(null);
+  // Stream promise — resolved once getUserMedia succeeds
+  const streamPromiseRef  = useRef<Promise<MediaStream> | null>(null);
   const streamResolverRef = useRef<((s: MediaStream) => void) | null>(null);
-  const streamPromiseRef  = useRef<Promise<MediaStream>>(
-    new Promise(resolve => { streamResolverRef.current = resolve; })
-  );
 
-  // ICE servers promise: resolves after fetchIceServers() completes.
-  const iceServersRef = useRef<Promise<RTCIceServer[]>>(fetchIceServers());
-
-  const iAmInitiatorRef   = useRef(false);
-  const matchActiveRef    = useRef(false);
-  const randomChatIdRef   = useRef<string | null>(null);
-  // Initiator stores partner's DB id here so callee_ready can trigger the call
-  const pendingCallToRef  = useRef<string | null>(null);
+  const iAmInitiatorRef  = useRef(false);
+  const matchActiveRef   = useRef(false);
+  const randomChatIdRef  = useRef<string | null>(null);
+  const pendingCallToRef = useRef<string | null>(null);
+  // Incremented on every cleanup so stale async callbacks can detect they're outdated
+  const sessionIdRef     = useRef(0);
 
   // ── Peer teardown ─────────────────────────────────────────────────────────
   const destroyPeer = useCallback(() => {
@@ -154,7 +133,7 @@ function RandomChatPage() {
 
   // ── Build peer ────────────────────────────────────────────────────────────
   const buildPeer = useCallback(async (initiator: boolean, localStream: MediaStream): Promise<Instance> => {
-    const iceServers = await iceServersRef.current;
+    const iceServers = await iceServersPromise;
     return new Peer({
       initiator,
       trickle: true,
@@ -183,8 +162,9 @@ function RandomChatPage() {
   // ── Initiator ─────────────────────────────────────────────────────────────
   const startCall = useCallback(async (targetUserId: string, localStream: MediaStream) => {
     console.log('[RTC] Starting call → initiator');
-
     const peer = await buildPeer(true, localStream);
+    // Check session is still valid after the async buildPeer
+    if (!matchActiveRef.current) { safePeerDestroy(peer); return; }
     peerRef.current = peer;
 
     peer.on('signal', (data: SignalData) => {
@@ -195,6 +175,7 @@ function RandomChatPage() {
 
     const onCallAccepted = (signal: SignalData) => {
       if (peerRef.current !== peer || (peer as any).destroyed) return;
+      console.log('[RTC] callAccepted:', (signal as any).type ?? 'candidate');
       try { peer.signal(signal); } catch (_) {}
     };
     socket.on('callAccepted', onCallAccepted);
@@ -207,8 +188,8 @@ function RandomChatPage() {
   // ── Callee ────────────────────────────────────────────────────────────────
   const receiveCall = useCallback(async (callerDbId: string, offerSignal: SignalData, localStream: MediaStream) => {
     console.log('[RTC] Receiving call → callee');
-
     const peer = await buildPeer(false, localStream);
+    if (!matchActiveRef.current) { safePeerDestroy(peer); return; }
     peerRef.current = peer;
 
     peer.on('signal', (data: SignalData) => {
@@ -218,14 +199,27 @@ function RandomChatPage() {
     });
 
     attachCommonHandlers(peer);
-    try { peer.signal(offerSignal); } catch (e) { console.warn('[RTC] signal() failed:', e); }
+    try { peer.signal(offerSignal); } catch (e) { console.warn('[RTC] initial signal() failed:', e); }
   }, [buildPeer, attachCommonHandlers]);
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    // 1. Camera / mic — resolve the stream promise when ready
+    // Capture session id for this mount — if cleanup runs before an async
+    // callback finishes, the callback sees a stale session and self-aborts.
+    const mySession = ++sessionIdRef.current;
+    const isStale   = () => sessionIdRef.current !== mySession;
+
+    // Fresh stream promise for this mount
+    streamPromiseRef.current = new Promise(resolve => {
+      streamResolverRef.current = resolve;
+    });
+
+    console.log(user);
+
+    // 1. Camera / mic
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(localStream => {
+        if (isStale()) { localStream.getTracks().forEach(t => t.stop()); return; }
         streamRef.current = localStream;
         if (myVideo.current) myVideo.current.srcObject = localStream;
         streamResolverRef.current?.(localStream);
@@ -235,18 +229,21 @@ function RandomChatPage() {
       .catch(err => console.error('[Media] getUserMedia failed:', err));
 
     // 2. Partner found
-    socket.on('partner_found', async (data: any) => {
-      if (matchActiveRef.current) return;
+    const onPartnerFound = async (data: any) => {
+      if (isStale() || matchActiveRef.current) {
+        console.warn('[Match] partner_found ignored (stale or duplicate)');
+        return;
+      }
       matchActiveRef.current = true;
 
       const foundPartnerId: string = data.partnerId;
       console.log('[Match] Partner found! id =', foundPartnerId);
-
       setPartnerId(foundPartnerId);
       setRandomChatData(data.randomChat);
       setPartnerData(data.partner);
-      setMatchPayload(data.matchPayload ?? data);
+      setMatchPayload(data.matchPayload);
       setPartnerStatus('connecting');
+      console.log('data:', data, '- userId', currentUserId);
 
       if (data.randomChat?._id) {
         randomChatIdRef.current = data.randomChat._id;
@@ -257,86 +254,75 @@ function RandomChatPage() {
       console.log('[RTC] Role:', iAmInitiatorRef.current ? 'INITIATOR' : 'CALLEE');
 
       if (iAmInitiatorRef.current) {
-        // Store the partner id; the actual call starts only after callee_ready
         pendingCallToRef.current = foundPartnerId;
         console.log('[RTC] Initiator waiting for callee_ready…');
       } else {
-        // Callee: await both the stream and the ICE servers, then signal ready
         console.log('[RTC] Callee awaiting stream + ICE…');
-        await Promise.all([streamPromiseRef.current, iceServersRef.current]);
-        console.log('[RTC] Callee ready — notifying initiator');
-        // Tell the initiator we're ready to receive the offer
+        await Promise.all([streamPromiseRef.current!, iceServersPromise]);
+        // After the await, check we're still in a valid session
+        if (isStale() || !matchActiveRef.current) {
+          console.warn('[RTC] Callee aborted — session ended while awaiting');
+          return;
+        }
+        console.log('[RTC] Callee signalling ready to initiator');
         socket.emit('callee_ready', { to: foundPartnerId });
       }
-    });
+    };
 
-    // 3. Initiator receives "callee is ready" — NOW safe to send the offer
-    socket.on('callee_ready', async () => {
-      if (!iAmInitiatorRef.current || !pendingCallToRef.current) return;
+    // 3. Initiator receives callee_ready
+    const onCalleeReady = async () => {
+      if (isStale() || !iAmInitiatorRef.current || !pendingCallToRef.current) return;
       console.log('[RTC] callee_ready received — starting call');
-
-      const [localStream] = await Promise.all([
-        streamPromiseRef.current,
-        iceServersRef.current,
-      ]);
-
-      if (matchActiveRef.current) {
-        startCall(pendingCallToRef.current, localStream);
-      }
-    });
+      const localStream = await streamPromiseRef.current!;
+      if (isStale() || !matchActiveRef.current) return;
+      startCall(pendingCallToRef.current, localStream);
+    };
 
     // 4. Incoming offer / trickle candidates (callee only)
-    socket.on('callUser', async (data: { signal: SignalData; from: string }) => {
-      if (iAmInitiatorRef.current) return;
-
-      const localStream = await streamPromiseRef.current;
+    const onCallUser = async (data: { signal: SignalData; from: string }) => {
+      if (isStale() || iAmInitiatorRef.current) return;
+      const localStream = await streamPromiseRef.current!;
+      if (isStale()) return;
 
       if (!peerRef.current) {
         receiveCall(data.from, data.signal, localStream);
       } else if (!(peerRef.current as any).destroyed) {
+        console.log('[RTC] Callee feeding trickle candidate');
         try { peerRef.current.signal(data.signal); } catch (_) {}
       }
-    });
+    };
 
     // 5. Partner left
-    socket.on('partner_left', () => {
+    const onPartnerLeft = () => {
+      if (isStale()) return;
       console.log('[Socket] Partner left');
       destroyPeer();
       setPartnerId('');
       setRandomChatData(null);
-      setPartnerData(null);
-      setMatchPayload(null);
       setPartnerStatus('left');
       randomChatIdRef.current  = null;
       pendingCallToRef.current = null;
       matchActiveRef.current   = false;
       iAmInitiatorRef.current  = false;
-    });
-    
-    
-    const triggerSearch = () => {
-    setPartnerStatus('searching');
-    fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => console.log('[Match] Request sent:', d.message ?? d))
-      .catch(err => {
-        console.error('[Match] Error:', err);
-        setPartnerStatus('searching');
-      });
-  };
+    };
+
+    socket.on('partner_found', onPartnerFound);
+    socket.on('callee_ready',  onCalleeReady);
+    socket.on('callUser',      onCallUser);
+    socket.on('partner_left',  onPartnerLeft);
 
     // 6. Start matchmaking
     triggerSearch();
 
     return () => {
-      socket.off('partner_found');
-      socket.off('callee_ready');
-      socket.off('callUser');
+      // Bump session id — all in-flight async callbacks will self-abort
+      sessionIdRef.current++;
+
+      socket.off('partner_found', onPartnerFound);
+      socket.off('callee_ready',  onCalleeReady);
+      socket.off('callUser',      onCallUser);
       socket.off('callAccepted');
-      socket.off('partner_left');
+      socket.off('partner_left',  onPartnerLeft);
 
       if (randomChatIdRef.current) {
         socket.emit('leave_random_chat', { randomChatId: randomChatIdRef.current });
@@ -350,6 +336,7 @@ function RandomChatPage() {
       matchActiveRef.current   = false;
       iAmInitiatorRef.current  = false;
       pendingCallToRef.current = null;
+      randomChatIdRef.current  = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -360,7 +347,7 @@ function RandomChatPage() {
     }
   }, [callAccepted, remoteStream]);
 
-  // ── Matchmaking ───────────────────────────────────────────────────────────
+  // ── Matchmaking trigger ───────────────────────────────────────────────────
   const triggerSearch = () => {
     setPartnerStatus('searching');
     fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
@@ -382,8 +369,6 @@ function RandomChatPage() {
     destroyPeer();
     setPartnerId('');
     setRandomChatData(null);
-    setPartnerData(null);
-    setMatchPayload(null);
     pendingCallToRef.current = null;
     matchActiveRef.current   = false;
     iAmInitiatorRef.current  = false;
@@ -391,7 +376,7 @@ function RandomChatPage() {
   }, [destroyPeer]);
 
   // ── Add friend ────────────────────────────────────────────────────────────
-  const addFriend = useCallback(() => {
+  const addFriend = () => {
     if (!partnerId) return;
     fetch(`${import.meta.env.VITE_SERVER_URL}/api/friends/request/${partnerId}`, {
       method: 'POST',
@@ -399,8 +384,8 @@ function RandomChatPage() {
     })
       .then(r => r.json())
       .then(d => console.log('[Friend] Request sent:', d.message ?? d))
-      .catch(err => console.error('[Friend] Error:', err));
-  }, [partnerId]);
+      .catch(err => console.error('[Friend request] Error:', err));
+  };
 
   return (
     <main className="randomchatpage">
@@ -447,9 +432,7 @@ function RandomChatPage() {
               type="random"
               socket={socket}
               currentUserId={currentUserId}
-              partnerId={partnerId}
-              chatData={randomChatData}
-              chatId={randomChatIdRef.current}
+              chatId={randomChatData._id}
               partnerData={partnerData}
             />
           )}

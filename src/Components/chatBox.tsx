@@ -13,7 +13,7 @@ const config = {
 
 const serverURL=import.meta.env.VITE_SERVER_URL ;
 
-const ChatBoxComp = ({ type, socket, currentUserId, partnerId, chatData, chatId , partnerData }: any) => {
+const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any) => {
     const [messages, setMessages] = useState<any[]>([]);
     const [inputText, setInputText] = useState("");
     const [isPartnerTyping, setIsPartnerTyping] = useState(false);
@@ -23,7 +23,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, partnerId, chatData, chatId 
 
     const typingTimeoutRef = useRef(null);
 
-    const activeChatId = type === 'random' ? chatData?._id : chatId;
+    const activeChatId =  chatId;
 
     // IMPORTANT: You need to EMIT the correct event name too!
     const handleInputChange = (e: any) => {
@@ -202,11 +202,11 @@ const ChatBoxComp = ({ type, socket, currentUserId, partnerId, chatData, chatId 
                         onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))} 
                     />
                     {/* SVG Icon for attachment */}
-                    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M21 4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h17c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 20V6h17v14H4zm13-11l-3.5 4.5-2.5-3L5 17h14l-2-8z" fill="currentColor"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M21 4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h17c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 20V6h17v14H4zm13-11l-3.5 4.5-2.5-3L5 17h14l-2-8z" fill="currentColor"/></svg>
                 </div>
 
                 <div className="sendIcon" onClick={sendMessage}>
-                    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/></svg>
+                    <svg  viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/></svg>
                 </div>
             </div>
         </div>

@@ -2,24 +2,31 @@ import './styleProfile.css'
 import ChatBoxComp from '../../Components/chatBox';
 import SearchBar from '../../Components/searchBar';
 import { useEffect, useState } from 'react';
-import { getMyChats } from '../../services/chatServices';
+import { getMyChats,getChat } from '../../services/chatServices';
 import { getFriendRequests ,acceptFriendRequest} from '../../services/userServices';
 import Cookies from 'js-cookie';
+import io, { Socket } from "socket.io-client";
 
-const me=JSON.parse(Cookies.get('user'))
+
+const me=JSON.parse(Cookies.get('user')?? '{}')
+    const socket: Socket = io(import.meta.env.VITE_SERVER_URL, {
+  auth: { userId: me._id }
+});
 
 const Profile = () => {
     
     const [showrequests,setShowRequests]=useState<boolean>(false)
+    const [partner,setPartner]=useState(null)
     const [chats,setChats]=useState([])
     const [requests,setrequests]=useState([])
+    const [openChat,setOpenChat]=useState(null)
 
     useEffect(()=>{
         console.log(me)
     getMyChats().then(res=>{setChats(res.data); console.log(chats)})
-
     getFriendRequests().then(res=>setrequests(res.data))
 },[])
+useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}},[openChat])
 
 
 
@@ -64,8 +71,14 @@ const Profile = () => {
                 </div>
                 <SearchBar/>
             {chats.map(friend=>(
-                <div className="message" key={friend._id}>
-                <div className="friendProfile active">
+                <div className="message" key={friend._id} onClick={()=>{
+                    setPartner(friend.participants[0]._id==me._id?
+                        friend.participants[1]:friend.participants[0])
+                    getChat(friend.participants[0]._id==me._id?
+                        friend.participants[1]._id:friend.participants[0]._id).then(res=>setOpenChat(res.data)).catch(e=>console.log("errreurrr"))
+                
+                }}>
+                <div className={`friendProfile${friend.active? " active":""}`}>
                     <img  src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${friend.participants[0]._id==me._id?
                         friend.participants[1].photo:friend.participants[0].photo}`} alt=""/>
                 </div>
@@ -77,7 +90,7 @@ const Profile = () => {
                     </span>
                     <div >
                         <span className="lastMessage">
-                            {friend.lastMessage || "Start a conversation"}
+                            {friend.lastMessage.text || "Start a conversation"}
                         </span>
                         <span>• {new Date(friend.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
@@ -92,15 +105,31 @@ const Profile = () => {
     <button onClick={() => acceptFriendRequest(user._id)}>Accept</button>
   </div>
 ))}
-        </div>
-        {/* <div className="chatbox"   style={{display:'none'}} >
-            <div className="chatHeader">
-                <div className="friendProfile active"> <img src="/user4.jpg" alt=""/></div>
-                Sabrina Carpenter
+<div className="message request">
+                <img  src="user4.jpg" alt="" />
+                <span>Sabrina Carpenter wants to be your friend</span>
+                <svg  viewBox="0 0 24 24" style={{backgroundColor: "rgb(138, 231, 133)"}}  xmlns="http://www.w3.org/2000/svg">
+<path d="M4.89163 13.2687L9.16582 17.5427L18.7085 8" fill="none"  stroke="green" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+               <svg xmlns="http://www.w3.org/2000/svg" style={{backgroundColor: "rgb(231, 133, 133)"}}  viewBox="0 0 24 24" fill="none">
+<path d="M6.99486 7.00636C6.60433 7.39689 6.60433 8.03005 6.99486 8.42058L10.58 12.0057L6.99486 15.5909C6.60433 15.9814 6.60433 16.6146 6.99486 17.0051C7.38538 17.3956 8.01855 17.3956 8.40907 17.0051L11.9942 13.4199L15.5794 17.0051C15.9699 17.3956 16.6031 17.3956 16.9936 17.0051C17.3841 16.6146 17.3841 15.9814 16.9936 15.5909L13.4084 12.0057L16.9936 8.42059C17.3841 8.03007 17.3841 7.3969 16.9936 7.00638C16.603 6.61585 15.9699 6.61585 15.5794 7.00638L11.9942 10.5915L8.40907 7.00636C8.01855 6.61584 7.38538 6.61584 6.99486 7.00636Z" fill="red"/>
+</svg >
+
+
             </div>
-            <ChatBoxComp type="none" />
-        </div> */}
-        <div className="random"  >
+        </div>
+        {openChat && <div className="chatbox"   >
+            <div className="chatHeader">
+                <div className={`friendProfile${partner.active? " active":""}`}> <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${partner.photo}`} alt=""/></div>
+                {partner.userName}
+            </div>
+             <ChatBoxComp type="none" socket={socket}
+              currentUserId={me._id}
+              chatId={openChat._id}
+              partnerData={partner}
+             />
+        </div>}
+        { ! openChat && <div className="random"  >
             <span>Hop into a random chat and see what fate has in store for you </span>
             <div className="buttons">
                 <button className="videoCall">
@@ -111,7 +140,7 @@ const Profile = () => {
                     Text Chat
                 </button>
             </div>
-        </div>
+        </div>}
         
     </div>
 </main>
