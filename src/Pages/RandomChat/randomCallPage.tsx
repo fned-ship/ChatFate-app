@@ -204,6 +204,7 @@ function RandomCallPage() {
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   useEffect(() => {
+    // console.log("token : ",token) ;
     // Capture session id for this mount — if cleanup runs before an async
     // callback finishes, the callback sees a stale session and self-aborts.
     const mySession = ++sessionIdRef.current;
