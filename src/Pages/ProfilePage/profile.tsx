@@ -66,7 +66,7 @@ const Profile = () => {
                 <div className="friendProfile active"> <img src="/user4.jpg" alt=""/></div>
                 Sabrina Carpenter
             </div>
-            <ChatBoxComp type="none" />
+            {/* <ChatBoxComp type="none" /> */}
         </div>
         <div className="random"  >
             <span>Hop into a random chat and see what fate has in store for you </span>
