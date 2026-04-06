@@ -90,13 +90,16 @@
             position: relative;
             margin-bottom: calc(var(--baseFont) * 0.5 );
         }
-       .request>img, .request>svg,.friendProfile>img{
+       .request>img, .request>svg, .friendProfile>img, .profile>img{
             height: 100%;
             aspect-ratio: 1/1;
             object-fit: cover;
             object-position: center center;
             border-radius: 50%;
             
+        }
+        .profile>img{
+            height: calc(2 * var(--baseFont));
         }
         .request>span{
             font-size: calc(var(--baseFont) * 0.5) ;

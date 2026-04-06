@@ -45,7 +45,7 @@ export default function LoginPage() {
       Cookies.set('userId', data.user._id,                { expires: 7 });
       Cookies.set('user',   JSON.stringify(data.user),    { expires: 7 });
 
-      navigate('/');
+      navigate('/myAccount');
     } catch {
       setError('Network error — please try again.');
     } finally {
