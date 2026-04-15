@@ -41,7 +41,6 @@ export const addReport = async (reportDetails, files = []) => {
   }
 };
 
-/
 export const takeReportAction = async (reportId, actionData) => {
   try {
     const response = await api.post(`/api/reports/${reportId}/action`, actionData);

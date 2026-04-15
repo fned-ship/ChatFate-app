@@ -1,7 +1,6 @@
 
 import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
 
 import Profile from './Pages/ProfilePage/profile';
 
@@ -48,7 +47,7 @@ function App() {
 
  
 function ResetPasswordPageWithParams() {
-  const { token } = useParams<{ token: string }>();
+  // const { token } = useParams<{ token: string }>();
   // Pass token as prop, or just use useParams directly inside ResetPasswordPage
   return <ResetPasswordPage />;
 }

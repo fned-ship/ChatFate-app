@@ -88,6 +88,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
         socket.on('stop_typing', (data: any) => {
             // You don't always need to check userId here, 
             // but it's safer if multiple people are in a room
+            console.log(data);
             setIsPartnerTyping(false);
         });
 
