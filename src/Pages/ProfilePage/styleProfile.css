@@ -276,7 +276,8 @@ input[type="radio"]:checked {
             justify-content: center;
         }
         
-        .buttons>button{
+        .buttons>.btn{
+            text-decoration: none;
             background: radial-gradient(#dabe37,#6f5d01);
             font-size: calc(0.7 * var(--baseFont));
             color: white;
@@ -289,7 +290,7 @@ input[type="radio"]:checked {
             gap: 5%;
             align-items: center;
         }
-        .buttons>button:hover{
+        .buttons>.btn:hover{
             box-shadow: 0px 0px 10px rgba(154, 154, 154, 0.5);
         }
         .textChat::before,.videoCall::before{

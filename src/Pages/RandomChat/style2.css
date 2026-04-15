@@ -125,6 +125,7 @@
             font-size:calc(0.5* var(--baseFont2));
             font-weight: bold;
             white-space: nowrap;
+            color:black ;
         }
 
 
@@ -158,15 +159,21 @@
         }
         .friend::before{
             content: "";
-            background-image: url("addFriend.png");
             background-size: contain;
             background-position: center center;
             display: block;
             height: 70%;
             aspect-ratio: 1/1;
-
-
         }
+
+        .friend.not-sent::before{
+            background-image: url("addUser.png");
+        }
+        .friend.sent::before{
+            background-image: url("sent.png");
+        }
+
+
         .skip{
             background: radial-gradient(circle,rgb(5, 218, 126),rgb(29, 108, 61));
             width: 35%;

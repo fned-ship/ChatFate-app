@@ -5,6 +5,7 @@ import { getMyChats,getChat } from '../../services/chatServices';
 import { getFriendRequests ,acceptFriendRequest, declineFriendRequest} from '../../services/userServices';
 import Cookies from 'js-cookie';
 import io, { Socket } from "socket.io-client";
+import {Link} from "react-router"
 
 const currentUserId = Cookies.get('userId');
 const socket: Socket = io(import.meta.env.VITE_SERVER_URL, {
@@ -141,13 +142,13 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
         {   <div className="random" style={{display:openChat && ! e ?'none':'flex'}}  >
             <span>Hop into a random chat and see what fate has in store for you </span>
             <div className="buttons">
-                <button className="videoCall">
+                <Link to="/random-call"  className="videoCall btn">
                     Video Call
-                </button>
+                </Link>
                 <span>Or</span>
-                <button className="textChat" >
+                <Link to="/random-chat"  className="textChat btn" >
                     Text Chat
-                </button>
+                </Link>
             </div>
         </div>}
     </div>

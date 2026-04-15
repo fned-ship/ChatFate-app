@@ -16,6 +16,7 @@ import EditProfilePage from './Pages/auth/editProfile';
 import RandomCallPage from './Pages/RandomChat/randomCallPage';
 import EditInterests from './Pages/PickInterest/EditInterests';
 import ChatHistory from './Pages/history/historyPage';
+import ModeratorReports from './Pages/report/moderator';
 
 function App() {
   
@@ -23,13 +24,15 @@ function App() {
   return (
      <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/myAccount"                      element={<Profile />} />
         <Route path="/random-call" element={<RandomCallPage />} />
         <Route path="/random-chat" element={<RandomChatPage />} />
         <Route path="/interests" element={<EditInterests />} />
 
+        <Route path="/moderator-reports" element={<ModeratorReports />} />
+
         {/* Auth */}
-        <Route path="/myAccount"                      element={<Profile />} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/auth/signup"                     element={<SignupPage />} />
         <Route path="/auth/check-email"                element={<CheckEmailPage />} />
         <Route path="/auth/verified"                   element={<VerifiedPage />} />
