@@ -45,8 +45,8 @@ let weaponModel: cocoSsd.ObjectDetection | null = null;
 
 const nsfwModelPromise: Promise<nsfwjs.NSFWJS> = (async () => {
   await tf.ready();
-  nsfwModel = await nsfwjs.load();
-  console.log('[NSFW] Model loaded');
+  nsfwModel = await nsfwjs.load(); //nsfwjs_model
+  console.log('[NSFW] Model loaded'); 
   return nsfwModel;
 })();
 

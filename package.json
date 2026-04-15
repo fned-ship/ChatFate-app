@@ -12,9 +12,9 @@
   "dependencies": {
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.14.0",
     "buffer": "^6.0.3",
-    "face-api.js": "^0.22.2",
     "js-cookie": "^3.0.5",
     "nsfwjs": "^4.3.0",
     "process": "^0.11.10",

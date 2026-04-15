@@ -1,5 +1,5 @@
 import  { useRef, useEffect, useState } from 'react';
-import * as faceapi from 'face-api.js';
+import * as faceapi from '@vladmandic/face-api';
 
 const AgeVerification = () => {
   const videoRef = useRef(null);
@@ -13,7 +13,7 @@ const AgeVerification = () => {
   useEffect(() => {
     const loadModels = async () => {
       try {
-        const MODEL_URL = '/models';
+        const MODEL_URL = '/models/face';
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL),
