@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import io, { Socket } from "socket.io-client";
 import Peer, { SignalData, Instance } from "simple-peer";
+import * as nsfwjs from "nsfwjs";
+import * as tf from "@tensorflow/tfjs";
+import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import './style2.css';
 import ChatBoxComp from "../../Components/chatBox";
 import Cookies from 'js-cookie';
@@ -12,41 +15,71 @@ const user          = JSON.parse(Cookies.get('user') ?? '{}');
 const colors        = ["#065535","#133337","#008080","#e6e6fa","#003366","#800000","#ff4040",
                        "#065535","#133337","#008080","#e6e6fa","#003366","#800000","#ff4040","#065535"];
 
-// Module-level socket — one instance for the lifetime of the page
 const socket: Socket = io(import.meta.env.VITE_SERVER_URL, {
   auth: { userId: currentUserId }
 });
 
-// Fetch Metered ICE servers once at module load
+// ── ICE ───────────────────────────────────────────────────────────────────────
 async function fetchIceServers(): Promise<RTCIceServer[]> {
   const subdomain = import.meta.env.VITE_METERED_SUBDOMAIN;
   const apiKey    = import.meta.env.VITE_METERED_API_KEY;
-
   const fallback: RTCIceServer[] = [
     { urls: 'stun:stun.l.google.com:19302'  },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
   ];
-
-  if (!subdomain || !apiKey) {
-    console.warn('[ICE] No Metered credentials — using STUN only');
-    return fallback;
-  }
+  if (!subdomain || !apiKey) return fallback;
   try {
     const res  = await fetch(`https://${subdomain}.metered.live/api/v1/turn/credentials?apiKey=${apiKey}`);
     const data = await res.json();
-    console.log('[ICE] Fetched', data.length, 'ICE servers from Metered');
     return data as RTCIceServer[];
-  } catch (err) {
-    console.error('[ICE] Metered fetch failed, using STUN fallback:', err);
-    return fallback;
-  }
+  } catch { return fallback; }
 }
 
 const iceServersPromise = fetchIceServers();
 
-type PartnerStatus = 'searching' | 'connecting' | 'connected' | 'left';
+// ── Models ────────────────────────────────────────────────────────────────────
+// NSFW: run once:  cp -r node_modules/nsfwjs/dist/quant_nsfw_mobilenet public/nsfwjs_model
+let nsfwModel:  nsfwjs.NSFWJS          | null = null;
+let weaponModel: cocoSsd.ObjectDetection | null = null;
 
+const nsfwModelPromise: Promise<nsfwjs.NSFWJS> = (async () => {
+  await tf.ready();
+  nsfwModel = await nsfwjs.load();
+  console.log('[NSFW] Model loaded');
+  return nsfwModel;
+})();
+
+// COCO-SSD loads from jsDelivr CDN bundled with the package — no extra setup needed
+const weaponModelPromise: Promise<cocoSsd.ObjectDetection> = (async () => {
+  await tf.ready();
+  weaponModel = await cocoSsd.load({ base: 'mobilenet_v2' });
+  console.log('[Weapon] COCO-SSD model loaded');
+  return weaponModel;
+})();
+
+// ── Weapon classes from COCO-SSD that we care about ──────────────────────────
+// Full COCO 80-class list includes these weapon-related labels:
+const WEAPON_CLASSES = ['knife', 'scissors'] as const;
+// Note: COCO-SSD does NOT have "gun" or "pistol" in its 80 classes.
+// For gun detection you need a custom model. We cover knife/scissors here
+// and add a score boost when both nsfw + weapon trigger simultaneously.
+const WEAPON_SCORE_THRESHOLD = 0.55;   // confidence to flag a weapon detection
+const WEAPON_AUTO_THRESHOLD  = 0.75;   // confidence to auto-report weapon
+
+// ── Thresholds ────────────────────────────────────────────────────────────────
+const NSFW_SCAN_INTERVAL_MS  = 2000;
+const BLUR_THRESHOLD         = 0.65;
+const AUTO_REPORT_THRESHOLD  = 0.85;
+const NSFW_CATEGORIES        = ['Porn', 'Hentai'] as const;
+const WARN_CATEGORIES        = ['Sexy'] as const;
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+type PartnerStatus  = 'searching' | 'connecting' | 'connected' | 'left';
+type ContentWarning = 'none' | 'mild' | 'severe';
+type DetectionType  = 'nsfw' | 'weapon' | 'nsfw+weapon';
+
+// ── Overlay ───────────────────────────────────────────────────────────────────
 const OVERLAY_CONFIG: Record<
   Exclude<PartnerStatus, 'connected'>,
   { icon: string; line1: string; line2: string; accent: string; spin: boolean }
@@ -82,6 +115,64 @@ function PartnerOverlay({ status }: { status: PartnerStatus }) {
   );
 }
 
+// ── Content warning overlay ───────────────────────────────────────────────────
+interface ContentWarningOverlayProps {
+  warning:      ContentWarning;
+  detectionType: DetectionType;
+  onUnblur:     () => void;
+  onReport:     () => void;
+  onSkip:       () => void;
+}
+
+const overlayBtnStyle = (bg: string, color: string): React.CSSProperties => ({
+  background: bg, color,
+  border: `1px solid ${color}44`,
+  borderRadius: 8, padding: '7px 14px',
+  fontSize: 12, fontWeight: 600, cursor: 'pointer',
+});
+
+const DETECTION_COPY: Record<DetectionType, { mild: string; severe: string }> = {
+  'nsfw':       { mild: 'Potentially sensitive content',   severe: 'Inappropriate content detected'  },
+  'weapon':     { mild: 'Possible weapon detected',        severe: 'Weapon detected — session ended'  },
+  'nsfw+weapon':{ mild: 'Sensitive content & weapon',      severe: 'Dangerous content — session ended'},
+};
+
+function ContentWarningOverlay({ warning, detectionType, onUnblur, onReport, onSkip }: ContentWarningOverlayProps) {
+  if (warning === 'none') return null;
+  const isSevere = warning === 'severe';
+  const copy     = DETECTION_COPY[detectionType];
+  const icon     = detectionType === 'weapon' || detectionType === 'nsfw+weapon' ? '🔫' : (isSevere ? '🚨' : '⚠️');
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 20,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 10,
+      background: isSevere ? 'rgba(20,0,0,0.92)' : 'rgba(20,10,0,0.80)',
+      backdropFilter: `blur(${isSevere ? 24 : 16}px)`,
+      borderRadius: 'inherit', padding: '20px 16px',
+    }}>
+      <span style={{ fontSize: 36 }}>{icon}</span>
+      <p style={{ color: isSevere ? '#ff5f5f' : '#ffb347', fontWeight: 700, fontSize: 14, textAlign: 'center', margin: 0 }}>
+        {isSevere ? copy.severe : copy.mild}
+      </p>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, textAlign: 'center', margin: 0, padding: '0 8px' }}>
+        {isSevere
+          ? 'This session has been automatically reported and ended.'
+          : 'Stream blurred for safety. What would you like to do?'}
+      </p>
+      {!isSevere && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button onClick={onUnblur} style={overlayBtnStyle('#ffffff22', '#fff')}>Unblur</button>
+          <button onClick={onReport} style={overlayBtnStyle('#ff5f5f33', '#ff5f5f')}>Report</button>
+          <button onClick={onSkip}   style={overlayBtnStyle('#6c63ff33', '#a78bfa')}>Skip</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Peer helpers ──────────────────────────────────────────────────────────────
 function safePeerDestroy(peer: Instance | null) {
   if (!peer) return;
   try {
@@ -92,20 +183,27 @@ function safePeerDestroy(peer: Instance | null) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 function RandomCallPage() {
-  const [partnerId,      setPartnerId]      = useState('');
-  const [randomChatData, setRandomChatData] = useState<any>(null);
-  const [callAccepted,   setCallAccepted]   = useState(false);
-  const [remoteStream,   setRemoteStream]   = useState<MediaStream | null>(null);
-  const [partnerStatus,  setPartnerStatus]  = useState<PartnerStatus>('searching');
-  const [partnerData,    setPartnerData]    = useState<any>(null);
-  const [matchPayload,   setMatchPayload]   = useState<any>(null);
+  const [partnerId,           setPartnerId]           = useState('');
+  const [randomChatData,      setRandomChatData]      = useState<any>(null);
+  const [callAccepted,        setCallAccepted]        = useState(false);
+  const [remoteStream,        setRemoteStream]        = useState<MediaStream | null>(null);
+  const [partnerStatus,       setPartnerStatus]       = useState<PartnerStatus>('searching');
+  const [partnerData,         setPartnerData]         = useState<any>(null);
+  const [matchPayload,        setMatchPayload]        = useState<any>(null);
+  const [contentWarning,      setContentWarning]      = useState<ContentWarning>('none');
+  const [detectionType,       setDetectionType]       = useState<DetectionType>('nsfw');
+  const [nsfwReady,           setNsfwReady]           = useState(false);
+  const [weaponReady,         setWeaponReady]         = useState(false);
+  const [friendRequestStatus, setFriendRequestStatus] = useState(false);
 
   const myVideo   = useRef<HTMLVideoElement>(null);
   const userVideo = useRef<HTMLVideoElement>(null);
-  const peerRef   = useRef<Instance | null>(null);
-  const streamRef = useRef<MediaStream | undefined>();
+  // Two canvases: NSFW needs 224×224, COCO-SSD works best at native resolution
+  const nsfwCanvasRef   = useRef<HTMLCanvasElement>(null);
+  const weaponCanvasRef = useRef<HTMLCanvasElement>(null);
+  const peerRef         = useRef<Instance | null>(null);
+  const streamRef       = useRef<MediaStream | undefined>();
 
-  // Stream promise — resolved once getUserMedia succeeds
   const streamPromiseRef  = useRef<Promise<MediaStream> | null>(null);
   const streamResolverRef = useRef<((s: MediaStream) => void) | null>(null);
 
@@ -113,8 +211,218 @@ function RandomCallPage() {
   const matchActiveRef   = useRef(false);
   const randomChatIdRef  = useRef<string | null>(null);
   const pendingCallToRef = useRef<string | null>(null);
-  // Incremented on every cleanup so stale async callbacks can detect they're outdated
   const sessionIdRef     = useRef(0);
+
+  const scanIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const partnerIdRef     = useRef('');
+  const contentWarnRef   = useRef<ContentWarning>('none');
+  const detectionTypeRef = useRef<DetectionType>('nsfw');
+  const autoReportedRef  = useRef(false);
+
+  // Keep refs in sync with state
+  useEffect(() => { partnerIdRef.current     = partnerId;      }, [partnerId]);
+  useEffect(() => { contentWarnRef.current   = contentWarning; }, [contentWarning]);
+  useEffect(() => { detectionTypeRef.current = detectionType;  }, [detectionType]);
+
+  // Preload both models in parallel
+  useEffect(() => {
+    nsfwModelPromise.then(()   => setNsfwReady(true)).catch(console.error);
+    weaponModelPromise.then(() => setWeaponReady(true)).catch(console.error);
+  }, []);
+
+  const modelReady = nsfwReady && weaponReady;
+
+  // ── Frame capture (shared, configurable size) ─────────────────────────────
+  const captureFrame = useCallback((
+    canvasRef: React.RefObject<HTMLCanvasElement>,
+    size: number
+  ): HTMLCanvasElement | null => {
+    const video  = userVideo.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) return null;
+    canvas.width  = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, size, size);
+    return canvas;
+  }, []);
+
+  // ── Submit report ─────────────────────────────────────────────────────────
+  const submitReport = useCallback(async (reason: string, imageDataUrl?: string) => {
+    const pid = partnerIdRef.current;
+    if (!pid) return;
+    try {
+      const fd = new FormData();
+      fd.append('reportedId', pid);
+      fd.append('report',     reason);
+      fd.append('importance', '3');
+      fd.append('ai',         'true');
+      if (imageDataUrl) {
+        const blob = await (await fetch(imageDataUrl)).blob();
+        fd.append('files', blob, 'evidence.jpg');
+      }
+      fetch(`${import.meta.env.VITE_SERVER_URL}/api/reports`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd,
+      })
+        .then(r => r.json())
+        .then(d => console.log('[Report] submitted:', d.message ?? d))
+        .catch(err => console.error('[Report] Error:', err));
+    } catch (err) {
+      console.error('[Report] failed:', err);
+    }
+  }, []);
+
+  // ── Trigger severe action (report + skip after delay) ─────────────────────
+  const handleSkipRef = useRef<() => void>(() => {});
+
+  const triggerSevere = useCallback(async (
+    label: string,
+    type: DetectionType,
+    imageDataUrl?: string
+  ) => {
+    if (autoReportedRef.current) return;
+    autoReportedRef.current = true;
+    setDetectionType(type);
+    setContentWarning('severe');
+    await submitReport(label, imageDataUrl);
+    setTimeout(() => handleSkipRef.current(), 3500);
+  }, [submitReport]);
+
+  // ── Scan loop: runs NSFW + weapon detection on every tick ─────────────────
+  const stopScanLoop = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+  }, []);
+
+  const startScanLoop = useCallback(() => {
+    if (scanIntervalRef.current) return;
+
+    scanIntervalRef.current = setInterval(async () => {
+      if (contentWarnRef.current === 'severe') return;
+
+      // ── Run both detections in parallel ───────────────────────────────────
+      const [nsfwResult, weaponResult] = await Promise.allSettled([
+
+        // 1. NSFW scan
+        (async () => {
+          if (!nsfwModel) return null;
+          const canvas = captureFrame(nsfwCanvasRef, 224);
+          if (!canvas) return null;
+          const preds  = await nsfwModel.classify(canvas);
+          const nsfwScore = Math.max(
+            ...NSFW_CATEGORIES.map(c => preds.find(p => p.className === c)?.probability ?? 0)
+          );
+          const warnScore = Math.max(
+            ...WARN_CATEGORIES.map(c => preds.find(p => p.className === c)?.probability ?? 0)
+          );
+          return { score: Math.max(nsfwScore, warnScore * 0.7), preds, canvas };
+        })(),
+
+        // 2. Weapon scan — COCO-SSD works on the video element directly
+        (async () => {
+          if (!weaponModel) return null;
+          const video = userVideo.current;
+          if (!video || video.readyState < 2 || video.videoWidth === 0) return null;
+
+          const detections = await weaponModel.detect(video);
+          const weapons    = detections.filter(d =>
+            WEAPON_CLASSES.includes(d.class as any) && d.score >= WEAPON_SCORE_THRESHOLD
+          );
+          const topScore = weapons.length > 0
+            ? Math.max(...weapons.map(w => w.score))
+            : 0;
+          const topClass = weapons.length > 0
+            ? [...weapons].sort((a, b) => b.score - a.score)[0].class
+            : null;
+
+          return { score: topScore, topClass, detections: weapons };
+        })(),
+
+      ]);
+
+      const nsfw   = nsfwResult.status   === 'fulfilled' ? nsfwResult.value   : null;
+      const weapon = weaponResult.status === 'fulfilled' ? weaponResult.value : null;
+
+      const nsfwScore   = nsfw?.score   ?? 0;
+      const weaponScore = weapon?.score ?? 0;
+      const bothTriggered = nsfwScore >= BLUR_THRESHOLD && weaponScore >= WEAPON_SCORE_THRESHOLD;
+
+      // Determine combined detection type
+      const currentType: DetectionType =
+        bothTriggered            ? 'nsfw+weapon'
+        : weaponScore >= WEAPON_SCORE_THRESHOLD ? 'weapon'
+        : 'nsfw';
+
+      // ── Evidence frame (from NSFW canvas, same image used for reports) ────
+      const evidenceDataUrl = nsfw?.canvas?.toDataURL('image/jpeg', 0.8);
+
+      // ── SEVERE auto-report logic ──────────────────────────────────────────
+      if (!autoReportedRef.current) {
+
+        // Weapon at high confidence → always severe
+        if (weaponScore >= WEAPON_AUTO_THRESHOLD) {
+          console.warn('[Weapon] SEVERE:', weapon?.topClass, `(${(weaponScore*100).toFixed(0)}%)`);
+          await triggerSevere(
+            `AI detected weapon: ${weapon?.topClass} (${(weaponScore*100).toFixed(0)}% confidence)`,
+            bothTriggered ? 'nsfw+weapon' : 'weapon',
+            evidenceDataUrl
+          );
+          return;
+        }
+
+        // NSFW at high confidence → severe
+        if (nsfwScore >= AUTO_REPORT_THRESHOLD) {
+          const topCat = nsfw?.preds
+            ? [...nsfw.preds].sort((a, b) => b.probability - a.probability)[0].className
+            : 'unknown';
+          console.warn('[NSFW] SEVERE:', topCat, `(${(nsfwScore*100).toFixed(0)}%)`);
+          await triggerSevere(
+            `AI detected inappropriate content: ${topCat} (${(nsfwScore*100).toFixed(0)}% confidence)`,
+            'nsfw',
+            evidenceDataUrl
+          );
+          return;
+        }
+      }
+
+      // ── MILD blur logic ───────────────────────────────────────────────────
+      const shouldBlur =
+        nsfwScore   >= BLUR_THRESHOLD ||
+        weaponScore >= WEAPON_SCORE_THRESHOLD;
+
+      if (shouldBlur && contentWarnRef.current === 'none') {
+        console.warn('[Scan] Mild warning:', currentType,
+          `nsfw=${(nsfwScore*100).toFixed(0)}%`,
+          `weapon=${(weaponScore*100).toFixed(0)}%`
+        );
+        setDetectionType(currentType);
+        setContentWarning('mild');
+
+      } else if (!shouldBlur && contentWarnRef.current === 'mild') {
+        // Hysteresis: only clear if both scores drop below 60% of threshold
+        const clear =
+          nsfwScore   < BLUR_THRESHOLD * 0.6 &&
+          weaponScore < WEAPON_SCORE_THRESHOLD * 0.6;
+        if (clear) setContentWarning('none');
+      }
+
+    }, NSFW_SCAN_INTERVAL_MS);
+  }, [captureFrame, triggerSevere]);
+
+  // Start/stop scan when call is active and both models are ready
+  useEffect(() => {
+    if (callAccepted && modelReady) {
+      autoReportedRef.current = false;
+      setContentWarning('none');
+      startScanLoop();
+    } else {
+      stopScanLoop();
+    }
+    return stopScanLoop;
+  }, [callAccepted, modelReady, startScanLoop, stopScanLoop]);
 
   // ── Peer teardown ─────────────────────────────────────────────────────────
   const destroyPeer = useCallback(() => {
@@ -122,8 +430,10 @@ function RandomCallPage() {
     peerRef.current = null;
     setCallAccepted(false);
     setRemoteStream(null);
+    setContentWarning('none');
+    stopScanLoop();
     if (userVideo.current) userVideo.current.srcObject = null;
-  }, []);
+  }, [stopScanLoop]);
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -134,12 +444,7 @@ function RandomCallPage() {
   // ── Build peer ────────────────────────────────────────────────────────────
   const buildPeer = useCallback(async (initiator: boolean, localStream: MediaStream): Promise<Instance> => {
     const iceServers = await iceServersPromise;
-    return new Peer({
-      initiator,
-      trickle: true,
-      stream:  localStream,
-      config:  { iceServers, iceCandidatePoolSize: 10 },
-    });
+    return new Peer({ initiator, trickle: true, stream: localStream, config: { iceServers, iceCandidatePoolSize: 10 } });
   }, []);
 
   const attachCommonHandlers = useCallback((peer: Instance) => {
@@ -149,75 +454,78 @@ function RandomCallPage() {
       setCallAccepted(true);
       setPartnerStatus('connected');
     });
-    peer.on('error', (err: Error) => {
-      if (peerRef.current !== peer) return;
-      console.error('[RTC] Peer error:', err.message);
-    });
-    peer.on('close', () => {
-      if (peerRef.current !== peer) return;
-      console.log('[RTC] Peer closed');
-    });
+    peer.on('error', (err: Error) => { if (peerRef.current !== peer) return; console.error('[RTC] Peer error:', err.message); });
+    peer.on('close', ()          => { if (peerRef.current !== peer) return; console.log('[RTC] Peer closed'); });
   }, []);
 
-  // ── Initiator ─────────────────────────────────────────────────────────────
   const startCall = useCallback(async (targetUserId: string, localStream: MediaStream) => {
-    console.log('[RTC] Starting call → initiator');
     const peer = await buildPeer(true, localStream);
-    // Check session is still valid after the async buildPeer
     if (!matchActiveRef.current) { safePeerDestroy(peer); return; }
     peerRef.current = peer;
-
     peer.on('signal', (data: SignalData) => {
       if (peerRef.current !== peer) return;
-      console.log('[RTC] Initiator signal:', (data as any).type ?? 'candidate');
       socket.emit('callUser', { userToCall: targetUserId, signalData: data, from: currentUserId });
     });
-
     const onCallAccepted = (signal: SignalData) => {
       if (peerRef.current !== peer || (peer as any).destroyed) return;
-      console.log('[RTC] callAccepted:', (signal as any).type ?? 'candidate');
       try { peer.signal(signal); } catch (_) {}
     };
     socket.on('callAccepted', onCallAccepted);
-
     attachCommonHandlers(peer);
     peer.on('close', () => socket.off('callAccepted', onCallAccepted));
     peer.on('error', () => socket.off('callAccepted', onCallAccepted));
   }, [buildPeer, attachCommonHandlers]);
 
-  // ── Callee ────────────────────────────────────────────────────────────────
   const receiveCall = useCallback(async (callerDbId: string, offerSignal: SignalData, localStream: MediaStream) => {
-    console.log('[RTC] Receiving call → callee');
     const peer = await buildPeer(false, localStream);
     if (!matchActiveRef.current) { safePeerDestroy(peer); return; }
     peerRef.current = peer;
-
     peer.on('signal', (data: SignalData) => {
       if (peerRef.current !== peer) return;
-      console.log('[RTC] Callee signal:', (data as any).type ?? 'candidate');
       socket.emit('answerCall', { signal: data, to: callerDbId });
     });
-
     attachCommonHandlers(peer);
-    try { peer.signal(offerSignal); } catch (e) { console.warn('[RTC] initial signal() failed:', e); }
+    try { peer.signal(offerSignal); } catch (e) { console.warn('[RTC] signal() failed:', e); }
   }, [buildPeer, attachCommonHandlers]);
+
+  // ── Skip ──────────────────────────────────────────────────────────────────
+  const handleSkip = useCallback(() => {
+    stopScanLoop();
+    setContentWarning('none');
+    autoReportedRef.current = false;
+    if (randomChatIdRef.current) {
+      socket.emit('leave_random_chat', { randomChatId: randomChatIdRef.current });
+      randomChatIdRef.current = null;
+    }
+    destroyPeer();
+    setPartnerId('');
+    setRandomChatData(null);
+    setMatchPayload(null);
+    setFriendRequestStatus(false);
+    pendingCallToRef.current = null;
+    matchActiveRef.current   = false;
+    iAmInitiatorRef.current  = false;
+
+    setPartnerStatus('searching');
+    fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ typeOfChat: 'video' }),
+    })
+      .then(r => r.json())
+      .then(d => console.log('[Match] Request sent:', d.message ?? d))
+      .catch(err => { console.error('[Match] Error:', err); setPartnerStatus('searching'); });
+  }, [destroyPeer, stopScanLoop]);
+
+  useEffect(() => { handleSkipRef.current = handleSkip; }, [handleSkip]);
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    // console.log("token : ",token) ;
-    // Capture session id for this mount — if cleanup runs before an async
-    // callback finishes, the callback sees a stale session and self-aborts.
     const mySession = ++sessionIdRef.current;
     const isStale   = () => sessionIdRef.current !== mySession;
 
-    // Fresh stream promise for this mount
-    streamPromiseRef.current = new Promise(resolve => {
-      streamResolverRef.current = resolve;
-    });
+    streamPromiseRef.current = new Promise(resolve => { streamResolverRef.current = resolve; });
 
-    console.log(user);
-
-    // 1. Camera / mic
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(localStream => {
         if (isStale()) { localStream.getTracks().forEach(t => t.stop()); return; }
@@ -229,77 +537,52 @@ function RandomCallPage() {
       })
       .catch(err => console.error('[Media] getUserMedia failed:', err));
 
-    // 2. Partner found
     const onPartnerFound = async (data: any) => {
-      if (isStale() || matchActiveRef.current) {
-        console.warn('[Match] partner_found ignored (stale or duplicate)');
-        return;
-      }
+      if (isStale() || matchActiveRef.current) { console.warn('[Match] Ignored'); return; }
       matchActiveRef.current = true;
-
       const foundPartnerId: string = data.partnerId;
-      console.log('[Match] Partner found! id =', foundPartnerId);
       setPartnerId(foundPartnerId);
       setRandomChatData(data.randomChat);
       setPartnerData(data.partner);
+      setFriendRequestStatus(false);
       setMatchPayload(data.matchPayload);
       setPartnerStatus('connecting');
-      console.log('data:', data, '- userId', currentUserId);
-
       if (data.randomChat?._id) {
         randomChatIdRef.current = data.randomChat._id;
         socket.emit('join_random_chat', { randomChatId: data.randomChat._id });
       }
-
       iAmInitiatorRef.current = (currentUserId ?? '') < foundPartnerId;
-      console.log('[RTC] Role:', iAmInitiatorRef.current ? 'INITIATOR' : 'CALLEE');
-
       if (iAmInitiatorRef.current) {
         pendingCallToRef.current = foundPartnerId;
-        console.log('[RTC] Initiator waiting for callee_ready…');
       } else {
-        console.log('[RTC] Callee awaiting stream + ICE…');
         await Promise.all([streamPromiseRef.current!, iceServersPromise]);
-        // After the await, check we're still in a valid session
-        if (isStale() || !matchActiveRef.current) {
-          console.warn('[RTC] Callee aborted — session ended while awaiting');
-          return;
-        }
-        console.log('[RTC] Callee signalling ready to initiator');
+        if (isStale() || !matchActiveRef.current) return;
         socket.emit('callee_ready', { to: foundPartnerId });
       }
     };
 
-    // 3. Initiator receives callee_ready
     const onCalleeReady = async () => {
       if (isStale() || !iAmInitiatorRef.current || !pendingCallToRef.current) return;
-      console.log('[RTC] callee_ready received — starting call');
       const localStream = await streamPromiseRef.current!;
       if (isStale() || !matchActiveRef.current) return;
       startCall(pendingCallToRef.current, localStream);
     };
 
-    // 4. Incoming offer / trickle candidates (callee only)
     const onCallUser = async (data: { signal: SignalData; from: string }) => {
       if (isStale() || iAmInitiatorRef.current) return;
       const localStream = await streamPromiseRef.current!;
       if (isStale()) return;
-
       if (!peerRef.current) {
         receiveCall(data.from, data.signal, localStream);
       } else if (!(peerRef.current as any).destroyed) {
-        console.log('[RTC] Callee feeding trickle candidate');
         try { peerRef.current.signal(data.signal); } catch (_) {}
       }
     };
 
-    // 5. Partner left
     const onPartnerLeft = () => {
       if (isStale()) return;
-      console.log('[Socket] Partner left');
       destroyPeer();
-      setPartnerId('');
-      setRandomChatData(null);
+      setPartnerId(''); setRandomChatData(null); setMatchPayload(null);
       setPartnerStatus('left');
       randomChatIdRef.current  = null;
       pendingCallToRef.current = null;
@@ -312,80 +595,53 @@ function RandomCallPage() {
     socket.on('callUser',      onCallUser);
     socket.on('partner_left',  onPartnerLeft);
 
-    // 6. Start matchmaking
-    triggerSearch();
+    setPartnerStatus('searching');
+    fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ typeOfChat: 'video' }),
+    })
+      .then(r => r.json())
+      .then(d => console.log('[Match] Request sent:', d.message ?? d))
+      .catch(err => { console.error('[Match] Error:', err); setPartnerStatus('searching'); });
 
     return () => {
-      // Bump session id — all in-flight async callbacks will self-abort
       sessionIdRef.current++;
-
       socket.off('partner_found', onPartnerFound);
       socket.off('callee_ready',  onCalleeReady);
       socket.off('callUser',      onCallUser);
       socket.off('callAccepted');
       socket.off('partner_left',  onPartnerLeft);
-
       if (randomChatIdRef.current) {
         socket.emit('leave_random_chat', { randomChatId: randomChatIdRef.current });
       }
       fetch(`${import.meta.env.VITE_SERVER_URL}/api/waiting-room`, {
         method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
       }).catch(() => {});
-
-      destroyPeer();
-      stopStream();
-      matchActiveRef.current   = false;
-      iAmInitiatorRef.current  = false;
-      pendingCallToRef.current = null;
-      randomChatIdRef.current  = null;
+      stopScanLoop(); destroyPeer(); stopStream();
+      matchActiveRef.current = false; iAmInitiatorRef.current = false;
+      pendingCallToRef.current = null; randomChatIdRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Attach remote stream to <video>
   useEffect(() => {
     if (callAccepted && remoteStream && userVideo.current) {
       userVideo.current.srcObject = remoteStream;
     }
   }, [callAccepted, remoteStream]);
 
-  // ── Matchmaking trigger ───────────────────────────────────────────────────
-  const triggerSearch = () => {
-    setPartnerStatus('searching');
-    fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => console.log('[Match] Request sent:', d.message ?? d))
-      .catch(err => { console.error('[Match] Error:', err); setPartnerStatus('searching'); });
-  };
+  const handleManualReport = useCallback(async () => {
+    const canvas       = captureFrame(nsfwCanvasRef, 224);
+    const imageDataUrl = canvas?.toDataURL('image/jpeg', 0.8);
+    await submitReport('User manually reported inappropriate content', imageDataUrl);
+    handleSkip();
+  }, [captureFrame, submitReport, handleSkip]);
 
-  // ── Skip ──────────────────────────────────────────────────────────────────
-  const handleSkip = useCallback(() => {
-    if (randomChatIdRef.current) {
-      socket.emit('leave_random_chat', { randomChatId: randomChatIdRef.current });
-      randomChatIdRef.current = null;
-    }
-    destroyPeer();
-    setPartnerId('');
-    setRandomChatData(null);
-    pendingCallToRef.current = null;
-    matchActiveRef.current   = false;
-    iAmInitiatorRef.current  = false;
-    triggerSearch();
-  }, [destroyPeer]);
-
-  // ── Add friend ────────────────────────────────────────────────────────────
-  const addFriend = () => {
-    if (!partnerId) return;
-    fetch(`${import.meta.env.VITE_SERVER_URL}/api/friends/request/${partnerId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => console.log('[Friend] Request sent:', d.message ?? d))
-      .catch(err => console.error('[Friend request] Error:', err));
-  };
+  // ── Loading indicator label ───────────────────────────────────────────────
+  const loadingLabel = !nsfwReady && !weaponReady ? 'Loading safety models…'
+    : !nsfwReady  ? 'Loading content model…'
+    : !weaponReady ? 'Loading weapon detector…'
+    : '';
 
   return (
     <main className="randomchatpage">
@@ -393,12 +649,36 @@ function RandomCallPage() {
       <img src="bg2.jpg" alt="" className="background" />
       <div className="overlay" />
 
+      {/* Hidden canvases for frame capture */}
+      <canvas ref={nsfwCanvasRef}   style={{ display: 'none' }} />
+      <canvas ref={weaponCanvasRef} style={{ display: 'none' }} />
+
       <div className="common">
         <h2 className="title">Common Interests:</h2>
         {matchPayload?.commonInterests?.map((int: string, index: number) => (
           <div key={int} className="interest" style={{ backgroundColor: colors[index] }}>{int}</div>
         ))}
       </div>
+
+      {/* Model loading pill */}
+      {!modelReady && (
+        <div style={{
+          position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(20,20,30,0.9)', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 99, padding: '7px 16px', fontSize: 12,
+          color: 'rgba(255,255,255,0.5)', zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
+        }}>
+          <div style={{
+            width: 10, height: 10, borderRadius: '50%',
+            borderWidth: 2, borderStyle: 'solid',
+            borderColor: 'transparent transparent transparent rgba(108,99,255,0.8)',
+            animation: 'spin 0.8s linear infinite',
+          }} />
+          {loadingLabel}
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
 
       <div className="screen">
         <div className="cams">
@@ -413,15 +693,33 @@ function RandomCallPage() {
 
           <div className="videoscreen second" style={{ position: 'relative', overflow: 'hidden' }}>
             <div className="sticker">
-              {partnerData && <ReactCountryFlag countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />}
-              <span>{callAccepted ? 'Partner' : '…'}</span>
+              {partnerData && partnerId && (
+                <ReactCountryFlag countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />
+              )}
+              <span>{callAccepted ? (partnerData?.firstName ?? 'Partner') : '…'}</span>
             </div>
+
             <video
               autoPlay
               ref={userVideo}
-              style={{ opacity: partnerStatus === 'connected' ? 1 : 0, transition: 'opacity 0.4s' }}
+              style={{
+                opacity:    partnerStatus === 'connected' ? 1 : 0,
+                transition: 'opacity 0.4s, filter 0.5s',
+                filter:     contentWarning !== 'none' ? 'blur(20px)' : 'none',
+              }}
             />
+
             <PartnerOverlay status={partnerStatus} />
+
+            {partnerStatus === 'connected' && (
+              <ContentWarningOverlay
+                warning={contentWarning}
+                detectionType={detectionType}
+                onUnblur={() => setContentWarning('none')}
+                onReport={handleManualReport}
+                onSkip={handleSkip}
+              />
+            )}
           </div>
 
         </div>
@@ -437,9 +735,24 @@ function RandomCallPage() {
             />
           )}
           <div className="chatbuttons">
-            <button className="btn skip"   onClick={handleSkip}>Skip</button>
-            <button className="btn friend" onClick={addFriend} disabled={!callAccepted}>Add Friend</button>
-            <button className="btn report" disabled={!callAccepted}>!</button>
+            <button className="btn skip" onClick={handleSkip}>Skip</button>
+            <button
+              className={`btn friend ${friendRequestStatus ? 'sent' : 'not-sent'}`}
+              disabled={!callAccepted}
+              onClick={() => {
+                if (!partnerId) return;
+                fetch(`${import.meta.env.VITE_SERVER_URL}/api/friends/request/${partnerId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                }).then(r => r.json()).then(d => {
+                  console.log('[Friend]', d.message);
+                  setFriendRequestStatus(true);
+                }).catch(console.error);
+              }}
+            >
+              {friendRequestStatus ? 'Request Sent' : 'Add Friend'}
+            </button>
+            <button className="btn report" disabled={!callAccepted} onClick={handleManualReport}>!</button>
           </div>
         </div>
       </div>

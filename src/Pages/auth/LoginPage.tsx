@@ -45,7 +45,11 @@ export default function LoginPage() {
       Cookies.set('userId', data.user._id,                { expires: 7 });
       Cookies.set('user',   JSON.stringify(data.user),    { expires: 7 });
 
-      navigate('/');
+      if(data.user.role=="moderator"){
+        navigate('/moderator-reports');
+      }else{
+        navigate('/');
+      }
     } catch {
       setError('Network error — please try again.');
     } finally {

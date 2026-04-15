@@ -7,29 +7,30 @@ import Profile from './Pages/ProfilePage/profile';
 
 import LoginPage     from './Pages/auth/LoginPage';
 import SignupPage    from './Pages/auth/SignupPage';
-import {
-  CheckEmailPage,
-  VerifiedPage,
+import { CheckEmailPage,VerifiedPage,
   ForgotPasswordPage,
-  ResetPasswordPage,
-} from './Pages/auth/authPages';
+  ResetPasswordPage, } from './Pages/auth/AuthPages';
 import RandomChatPage from './Pages/RandomChat/randomChatPage';
 
 import RandomCallPage from './Pages/RandomChat/randomCallPage';
 import EditInterests from './Pages/PickInterest/EditInterests';
+import ModeratorReports from './pages/report/moderator' ;
+
 function App() {
   
 
   return (
      <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Profile />} />
+        <Route path="/"                      element={<Profile />} />
         <Route path="/random-call" element={<RandomCallPage />} />
         <Route path="/random-chat" element={<RandomChatPage />} />
         <Route path="/interests" element={<EditInterests />} />
 
+        <Route path="/moderator-reports" element={<ModeratorReports />} />
+
         {/* Auth */}
-        <Route path="/auth/login"                      element={<LoginPage />} />
+        <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/signup"                     element={<SignupPage />} />
         <Route path="/auth/check-email"                element={<CheckEmailPage />} />
         <Route path="/auth/verified"                   element={<VerifiedPage />} />
