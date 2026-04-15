@@ -687,7 +687,7 @@ function RandomCallPage() {
   return (
     <main className="randomchatpage">
       <span className="brand">hatFate</span>
-      <img src="bg2.jpg" alt="" className="background" />
+      <img src="/bg2.jpg" alt="" className="background" />
       <div className="overlay" />
 
       {/* Hidden canvases for frame capture */}

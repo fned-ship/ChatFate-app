@@ -15,7 +15,7 @@
   font-style: normal;
   font-variation-settings:
     "wdth" 100;
-    background-image: url(bg2.jpg);
+    background-image: url("/bg2.jpg");
             background-position: center center;
             background-size: cover;
         }
@@ -295,7 +295,7 @@ input[type="radio"]:checked {
         }
         .textChat::before,.videoCall::before{
             content: "";
-            background-image: url("camIcon.png");
+            background-image: url("/camIcon.png");
             background-size: cover;
             background-repeat:no-repeat ;
             background-position: center center;
@@ -304,7 +304,7 @@ input[type="radio"]:checked {
             aspect-ratio: 1/1;
         }
         .textChat::before{
-            background-image: url("chatIcon.png");
+            background-image: url("/chatIcon.png");
         }
 
         .chatbox{
@@ -357,3 +357,9 @@ input[type="radio"]:checked {
             .buttons{
                 flex-direction: column;}
             }
+
+
+
+
+
+        
