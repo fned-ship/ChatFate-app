@@ -113,7 +113,7 @@
             z-index: 1;
         }
 
-        .sticker>.countryFlag{
+        .sticker>.flag{
             height:  var(--baseFont2) ;
             aspect-ratio: 1/1;
             border-radius: 50%;
@@ -121,6 +121,7 @@
             
         }
         .sticker>span{
+            color: black;
             font-size:calc(0.5* var(--baseFont2));
             font-weight: bold;
             white-space: nowrap;
@@ -135,7 +136,6 @@
             justify-content: flex-end;
         }
         .chatbuttons{
-            height: 10%;
             display: flex;
             justify-content: space-between;
             box-sizing: border-box;
@@ -144,6 +144,7 @@
             background: radial-gradient(circle,red,rgb(88, 1, 1));
             color:white;
             font-size: calc(0.5 * var(--baseFont2) ) ;
+            padding: min(10%,20px);
             border-radius: 50vh ;
         }
         .friend{
@@ -204,6 +205,7 @@
         }
         
         
+        
 
 
 
@@ -231,15 +233,16 @@
                 overflow: visible;
             }
             .screen{
-                flex-direction: column-reverse;
+                flex-direction: column;
                 gap: 15px;
             }
             .videoscreen{
                 aspect-ratio: 3/2;
             }
             .chatcontainer{
-                height:200px;
+                width: 100%;
                 aspect-ratio: 1/1;
+                flex: auto;
             }
             .sticker{
                 top: 2px;

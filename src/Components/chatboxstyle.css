@@ -38,33 +38,36 @@
             background-color: rgb(41, 41, 41);
             border-radius: calc(var(--baseFont) * 0.5);
             position: relative;
+            transition: 0.5s;
 
         }
 
         .myMessage .actions{
-            left: -80px;
+            left: -75px;
         }
         .otherMessage .actions{
-            right: -80px;
+            right: -75px;
         }
 
         .actions{
             width: 70px;
             position: absolute;
-            top: 50%;
             background-color: inherit;
-            transform: translateY(-50%);
+            bottom: 2%;
             display: flex;
-            padding-block: min(1vh,1vw,10px);
-            padding-inline: min(3vh,3vw,20px);
+            padding-block: 10px;
+            padding-inline: 40px;
             box-sizing: border-box;
-            gap: 50%;
+            gap: 10px;
             justify-content: center;
             border-radius: 50vh;
         }
-        /* .otherMessage > .actions{
-            left: var(--baseFont);
-        } */
+        div :not(:hover )>.actions{
+            display: none;
+        }
+        .myMessage:hover, .otherMessage:hover{
+            transform: translateY(-10px);
+        }
         .otherMessage{
             background-color: var(--mainPurple);
         }
@@ -125,6 +128,13 @@
             font-size: calc(var(--baseFont) * 0.55);
             color: rgb(166, 166, 166); 
            
+        }
+        .reaction-badge{
+            position: absolute;
+            bottom: 0;
+            left: min(5%,40px);
+            transform: translateY(50%);
+
         }
         .replyto>span:first-child{
             font-weight: bold;
@@ -216,6 +226,11 @@
         }
 
         .chat-img{
-            object-fit: cover;
-            width: 100px;
+            max-width: 100px;
+            max-height: 100px ;
+        }
+        .msg-content{
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }

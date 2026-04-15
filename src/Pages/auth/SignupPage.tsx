@@ -25,7 +25,7 @@ function EyeIcon({ open }: { open: boolean }) {
 }
 
 // ── Country list (abbreviated — extend as needed) ─────────────────────────────
-const COUNTRIES = [
+export const COUNTRIES = [
   ['AF','Afghanistan'],['AL','Albania'],['DZ','Algeria'],['AR','Argentina'],
   ['AU','Australia'],['AT','Austria'],['BE','Belgium'],['BR','Brazil'],
   ['CA','Canada'],['CL','Chile'],['CN','China'],['CO','Colombia'],
@@ -131,7 +131,7 @@ export default function SignupPage() {
 
         <div className="auth-brand">
           <span className="auth-brand-dot" />
-          <span className="auth-brand-name">ChatFate</span>
+          <span className="brand" style={{marginBottom:'10px'}}>hatFate</span>
         </div>
 
         {/* Step progress */}

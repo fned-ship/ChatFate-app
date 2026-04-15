@@ -165,7 +165,12 @@ input[type="radio"]:checked {
 .toggleBar>.toggle:has(input[type="radio"]:checked){
     color:var(--mainPurple);
 }
-
+@keyframes slide{
+            100%{
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
         .message{
             height: calc(2 * var(--baseFont) + 40px);
             width: 100%;
@@ -179,6 +184,12 @@ input[type="radio"]:checked {
             padding: 20px 10px;
             box-sizing: border-box;
             cursor: pointer;
+            transform: translateX(50%);
+            opacity: 0;
+            animation-name: slide;
+            animation-duration: 0.5s;
+            animation-delay: calc( (sibling-index() - 4) * 0.2s);
+            animation-fill-mode: forwards;
         }
         .message:hover{
             background-color: rgba(78, 78, 78, 0.5);
@@ -196,11 +207,11 @@ input[type="radio"]:checked {
             border-radius: 50%;
             
         }
-        .active >img{
+        .Active >img{
             mask: radial-gradient(calc(0.4 * var(--baseFont)) at 93% 93% ,#0000 calc(100% ),#000);
             
         }
-        .active::after{
+        .Active::after{
             content: "";
             display: block;
             width: calc(0.4 * var(--baseFont)) ;
@@ -281,7 +292,7 @@ input[type="radio"]:checked {
         .buttons>button:hover{
             box-shadow: 0px 0px 10px rgba(154, 154, 154, 0.5);
         }
-        .buttons>button::before{
+        .textChat::before,.videoCall::before{
             content: "";
             background-image: url("camIcon.png");
             background-size: cover;
@@ -303,7 +314,7 @@ input[type="radio"]:checked {
             background-color: rgba(128, 128, 128, 0.5);
         }
         .chatHeader{
-            height: calc(var(--baseFont) + 20px);
+            height: calc(1.5 * var(--baseFont) + 20px);
             padding: 10px;
             background: linear-gradient(rgb(41, 41, 41) ,transparent);
             display: flex;
@@ -312,8 +323,16 @@ input[type="radio"]:checked {
             color: white;
             font-size:calc(0.7 * var(--baseFont));
             font-weight: bold;
+            width: 100%;
         }
-       
+       .chatHeader>button{
+        margin-left: auto;
+        height: 50%;
+        aspect-ratio: 1/1;
+        color: white;
+        background-color: rgb(33, 33, 33);
+        border-radius: 50%;
+       }
         
         @media screen and (max-aspect-ratio: 1/1) {
             :root{

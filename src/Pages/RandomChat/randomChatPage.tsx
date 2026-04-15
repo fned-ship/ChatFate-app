@@ -62,6 +62,7 @@ function RandomChatPage() {
   const [partnerStatus,  setPartnerStatus]  = useState<PartnerStatus>('searching');
   const [partnerData,    setPartnerData]    = useState<any>(null);
   const [matchPayload,   setMatchPayload]   = useState<any>(null);
+  const [friendRequestStatus,setFriendRequestStatus] = useState(false);
 
   const iAmInitiatorRef  = useRef(false);
   const matchActiveRef   = useRef(false);
@@ -93,6 +94,7 @@ function RandomChatPage() {
       setPartnerId(foundPartnerId);
       setRandomChatData(data.randomChat);
       setPartnerData(data.partner);
+      setFriendRequestStatus(false);
       setMatchPayload(data.matchPayload);
       setPartnerStatus('connected');
       console.log('data:', data, '- userId', currentUserId);
@@ -150,6 +152,7 @@ function RandomChatPage() {
     fetch(`${import.meta.env.VITE_SERVER_URL}/api/find-partner`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ typeOfChat: 'chat' }) ,
     })
       .then(r => r.json())
       .then(d => console.log('[Match] Request sent:', d.message ?? d))
@@ -179,7 +182,10 @@ function RandomChatPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
-      .then(d => console.log('[Friend] Request sent:', d.message ?? d))
+      .then(d => {
+        console.log('[Friend] Request sent:', d.message ?? d);
+        setFriendRequestStatus(true);
+      })
       .catch(err => console.error('[Friend request] Error:', err));
   };
 
@@ -203,7 +209,7 @@ function RandomChatPage() {
                 type="random"
                 socket={socket}
                 currentUserId={currentUserId}
-                partnerId={partnerId}
+                partnerData={partnerData}
                 chatId={randomChatData._id}
                 />
             )}
@@ -213,7 +219,7 @@ function RandomChatPage() {
         <div className="chatcontainer">
           <div className="chatbuttons">
             <button className="btn skip"   onClick={handleSkip}>Skip</button>
-            <button className="btn friend" onClick={addFriend} >Add Friend</button>
+            <button className={`btn friend ${friendRequestStatus?'sent':'not-sent'}`} onClick={addFriend} >{friendRequestStatus?'Request Sent':'Add Friend'}</button>
             <button className="btn report" >!</button>
           </div>
           { partnerData && 

@@ -9,11 +9,14 @@ import LoginPage     from './Pages/auth/LoginPage';
 import SignupPage    from './Pages/auth/SignupPage';
 import { CheckEmailPage,VerifiedPage,
   ForgotPasswordPage,
-  ResetPasswordPage, } from './Pages/auth/AuthPages';
+  ResetPasswordPage } from './Pages/auth/AuthPages';
+import AgeVerification from './Pages/auth/AgeVerificaton';
 import RandomChatPage from './Pages/RandomChat/randomChatPage';
-
+import EditProfilePage from './Pages/auth/editProfile';
 import RandomCallPage from './Pages/RandomChat/randomCallPage';
 import EditInterests from './Pages/PickInterest/EditInterests';
+import ChatHistory from './Pages/history/historyPage';
+
 function App() {
   
 
@@ -32,7 +35,9 @@ function App() {
         <Route path="/auth/verified"                   element={<VerifiedPage />} />
         <Route path="/auth/forgot-password"            element={<ForgotPasswordPage />} />
         <Route path="/auth/reset-password/:token"      element={<ResetPasswordPageWithParams />} />
-
+        <Route path="/verifyAge"      element={<AgeVerification />} />
+        <Route path="/editInfo"      element={<EditProfilePage />} />
+        <Route path="/history"      element={<ChatHistory />} />
       </Routes>
     </BrowserRouter>
   )

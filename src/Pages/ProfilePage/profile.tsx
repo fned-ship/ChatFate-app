@@ -1,32 +1,39 @@
 import './styleProfile.css'
 import ChatBoxComp from '../../Components/chatBox';
-import SearchBar from '../../Components/searchBar';
 import { useEffect, useState } from 'react';
 import { getMyChats,getChat } from '../../services/chatServices';
 import { getFriendRequests ,acceptFriendRequest, declineFriendRequest} from '../../services/userServices';
 import Cookies from 'js-cookie';
 import io, { Socket } from "socket.io-client";
 
-
-const me= JSON.parse(Cookies.get('user') ?? '{}');
-    const socket: Socket = io(import.meta.env.VITE_SERVER_URL, {
-  auth: { userId: me._id }
+const currentUserId = Cookies.get('userId');
+const socket: Socket = io(import.meta.env.VITE_SERVER_URL, {
+  auth: { userId: currentUserId, }
 });
 
 const Profile = () => {
+    const me= JSON.parse(Cookies.get('user') ?? '{}');
     
+
+    const [searchTerm,setsearchTerm]=useState("")
     const [showrequests,setShowRequests]=useState<boolean>(false)
     const [partner,setPartner]=useState(null)
     const [chats,setChats]=useState([])
     const [requests,setrequests]=useState([])
     const [openChat,setOpenChat]=useState(null)
+    const mediaQuery = window.matchMedia("(max-aspect-ratio: 1/1)");
+    const [e,setE]=useState<boolean>(mediaQuery.matches)
+    mediaQuery.addEventListener('change',()=>{setE(mediaQuery.matches)})
 
     useEffect(()=>{
-        console.log(me)
-    getMyChats().then(res=>{setChats(res.data); console.log(chats)})
+    getMyChats().then(res=>{setChats(res.data)})
     getFriendRequests().then(res=>setrequests(res.data))
 },[])
-useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}},[openChat])
+useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
+
+
+
+},[openChat])
 
 
 
@@ -50,9 +57,9 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
         </div>
     </header>
     <div className="rest">
-        <div className="friendList">
+        {<div className="friendList" style={{display: openChat && e  ?'none':'flex'}}>
             <div className="profile">
-                <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${me.photo}`} alt=""/>
+                <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${me.photo}`} alt="" />
                 <span>Welcome back, {me.userName} !  </span> 
                 <svg   xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 600 600" version="1.1">
   <g  transform="matrix(0.95173205,0,0,0.95115787,13.901174,12.168794)" >
@@ -62,15 +69,20 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
             </div>
             <div className="toggleBar">
 
-                    <div className="toggle"> <input type="radio" name="type" value="friends" /> <span>Friends</span></div>
+                    <div className="toggle"> <input type="radio" name="type" value="friends" defaultChecked onClick={()=>setShowRequests(false)} /> <span>Friends</span></div>
 <div className="toggle">
-  <input type="radio" name="type" value="requests"/> <span>Requests</span>
+  <input type="radio" name="type" value="requests" onClick={()=>setShowRequests(true)} /> <span>Requests</span>
 </div>
 
 
                 </div>
-                <SearchBar/>
-            {chats.map(friend=>(
+                <div style={{height:'var(--baseFont)',width:"80%",alignSelf:'center',display:"flex",borderBottom:"1px solid white", paddingBottom:" calc(0.2 * var(--baseFont))",marginBottom: "calc(var(--baseFont) * 0.5 )"}}>
+            <img src="searchIcon.png" style={{aspectRatio:"1/1",height:"100%",transform:"translateX(-50%)"}} alt="" />
+            <input onChange={(e)=>{setsearchTerm(e.target.value)}} style={{flex:1,backgroundColor:"transparent",fontSize:"calc(0.55 * var(--baseFont))", color:"white"}} type="text" placeholder="Search..."/>
+
+        </div>
+            {!showrequests && chats.filter(friend=> friend.participants[0]._id==me._id?
+                        friend.participants[1].userName.includes(searchTerm): friend.participants[0].userName.includes(searchTerm)).map(friend=>(
                 <div className="message" key={friend._id} onClick={()=>{
                     setPartner(friend.participants[0]._id==me._id?
                         friend.participants[1]: friend.participants[0])
@@ -78,7 +90,7 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
                         friend.participants[1]._id:friend.participants[0]._id).then(res=>setOpenChat(res.data)).catch(e=>console.log("errreurrr"))
                 
                 }}>
-                <div className={`friendProfile${friend.active? " active":""}`}>
+                <div className={`friendProfile Active`}>
                     <img  src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${friend.participants[0]._id==me._id?
                         friend.participants[1].photo:friend.participants[0].photo}`} alt=""/>
                 </div>
@@ -90,7 +102,7 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
                     </span>
                     <div >
                         <span className="lastMessage">
-                            {friend.lastMessage.text || "Start a conversation"}
+                            {friend.lastMessage? friend.lastMessage.text : "Start a conversation"}
                         </span>
                         <span>• {new Date(friend.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
@@ -98,14 +110,13 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
             </div>
             ))}
             
-            {requests.map(user => (
-  <div className="message request">
+            {showrequests && requests.filter(user=> user.userName.includes(searchTerm)).map(user => (<div className="message request">
                 <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${user.photo}`} alt=""/>
                 <span>{user.userName} wants to be your friend</span>
-                <svg  onClick={()=>acceptFriendRequest(user._id)} viewBox="0 0 24 24" style={{backgroundColor: "rgb(138, 231, 133)"}}  xmlns="http://www.w3.org/2000/svg">
+                <svg  onClick={()=>acceptFriendRequest(user._id).then(res=>setrequests(prevItems => prevItems.filter(item => item._id !== user._id)))} viewBox="0 0 24 24" style={{backgroundColor: "rgb(138, 231, 133)"}}  xmlns="http://www.w3.org/2000/svg">
 <path d="M4.89163 13.2687L9.16582 17.5427L18.7085 8" fill="none"  stroke="green" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
-               <svg onClick={()=>declineFriendRequest(user._id)} xmlns="http://www.w3.org/2000/svg" style={{backgroundColor: "rgb(231, 133, 133)"}}  viewBox="0 0 24 24" fill="none">
+               <svg onClick={()=>declineFriendRequest(user._id).then(res=>setrequests(prevItems => prevItems.filter(item => item._id !== user._id)))} xmlns="http://www.w3.org/2000/svg" style={{backgroundColor: "rgb(231, 133, 133)"}}  viewBox="0 0 24 24" fill="none">
 <path d="M6.99486 7.00636C6.60433 7.39689 6.60433 8.03005 6.99486 8.42058L10.58 12.0057L6.99486 15.5909C6.60433 15.9814 6.60433 16.6146 6.99486 17.0051C7.38538 17.3956 8.01855 17.3956 8.40907 17.0051L11.9942 13.4199L15.5794 17.0051C15.9699 17.3956 16.6031 17.3956 16.9936 17.0051C17.3841 16.6146 17.3841 15.9814 16.9936 15.5909L13.4084 12.0057L16.9936 8.42059C17.3841 8.03007 17.3841 7.3969 16.9936 7.00638C16.603 6.61585 15.9699 6.61585 15.5794 7.00638L11.9942 10.5915L8.40907 7.00636C8.01855 6.61584 7.38538 6.61584 6.99486 7.00636Z" fill="red"/>
 </svg >
 
@@ -113,11 +124,13 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
             </div>
 ))}
 
-        </div>
+        </div>}
         {openChat && <div className="chatbox"   >
             <div className="chatHeader">
-                <div className={`friendProfile${partner.active? " active":""}`}> <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${partner.photo}`} alt=""/></div>
+                <div className={`friendProfile Active`}> <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${partner.photo}`} alt=""/></div>
                 {partner.userName}
+
+                <button onClick={()=>setOpenChat(null)} >✕</button>
             </div>
              <ChatBoxComp type="none" socket={socket}
               currentUserId={me._id}
@@ -125,7 +138,7 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
               partnerData={partner}
              />
         </div>}
-        { ! openChat && <div className="random"  >
+        {   <div className="random" style={{display:openChat && ! e ?'none':'flex'}}  >
             <span>Hop into a random chat and see what fate has in store for you </span>
             <div className="buttons">
                 <button className="videoCall">
@@ -137,7 +150,6 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
                 </button>
             </div>
         </div>}
-        
     </div>
 </main>
   );

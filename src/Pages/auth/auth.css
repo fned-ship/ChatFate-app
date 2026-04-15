@@ -3,18 +3,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
 :root {
-  --bg:          #09090f;
-  --bg2:         #0f0f1a;
-  --surface:     #13131f;
-  --border:      rgba(255,255,255,0.07);
-  --border-focus:rgba(108,99,255,0.6);
-  --accent:      #6c63ff;
-  --accent2:     #a78bfa;
-  --accent-glow: rgba(108,99,255,0.25);
-  --text:        #f0eeff;
-  --muted:       rgba(240,238,255,0.45);
-  --danger:      #ff5f7e;
-  --success:     #3ecf8e;
+--bg:          #0c0c16; 
+  --bg2:         #10101d;  
+  --surface:     #141421;  
+  --border:      #2a2a3a; 
+  --border-focus:#5a4c8a;  
+  --accent:      #3a2c5a;  
+  --accent2:     #f5c643; 
+  --accent-glow: rgba(58, 44, 90, 0.25); 
+  --text:        #ffffff; 
+  --muted:       #afafaf;  
+  --danger:      #ee2b3e;  
+  --success:     #16a367;
   --radius:      14px;
   --font-head:   'Syne', sans-serif;
   --font-body:   'DM Sans', sans-serif;
@@ -45,10 +45,18 @@ body {
   content: '';
   position: fixed;
   inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108,99,255,0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(167,139,250,0.1) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(108,99,255,0.05) 0%, transparent 70%);
+background: 
+    /* Top-left deep purple glow */
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(58, 44, 90, 0.2) 0%, transparent 60%),
+    
+    /* Bottom-right subtle gold/starry warmth */
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(245, 198, 67, 0.05) 0%, transparent 60%),
+    
+    /* Center deep accent glow */
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(58, 44, 90, 0.1) 0%, transparent 70%),
+    
+    /* Base background color */
+    var(--bg, #0c0c16);
   pointer-events: none;
   z-index: 0;
 }
@@ -86,13 +94,7 @@ body {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ── Brand ── */
-.auth-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
+
 
 .auth-brand-dot {
   width: 10px;
@@ -121,6 +123,7 @@ body {
   font-family: var(--font-head);
   font-size: 28px;
   font-weight: 800;
+  margin-top: 10px;
   letter-spacing: -0.8px;
   line-height: 1.1;
   color: var(--text);
@@ -216,7 +219,6 @@ body {
   position: relative;
   overflow: hidden;
   transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-  box-shadow: 0 4px 24px rgba(108,99,255,0.4);
 }
 
 .auth-btn::before {

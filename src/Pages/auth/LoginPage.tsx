@@ -45,7 +45,11 @@ export default function LoginPage() {
       Cookies.set('userId', data.user._id,                { expires: 7 });
       Cookies.set('user',   JSON.stringify(data.user),    { expires: 7 });
 
-      navigate('/myAccount');
+      if(data.user.role=="moderator"){
+        navigate('/moderator-reports');
+      }else{
+        navigate('/myAccount');
+      }
     } catch {
       setError('Network error — please try again.');
     } finally {
@@ -58,8 +62,7 @@ export default function LoginPage() {
       <div className="auth-card">
 
         <div className="auth-brand">
-          <span className="auth-brand-dot" />
-          <span className="auth-brand-name">ChatFate</span>
+          <span className="brand">hatFate</span>
         </div>
 
         <h1 className="auth-title">Welcome back</h1>

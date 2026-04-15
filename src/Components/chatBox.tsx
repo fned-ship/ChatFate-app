@@ -112,14 +112,12 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
 
     const sendMessage = async () => {
         if (!inputText.trim() && selectedFiles.length === 0) return;
-
-        // If files exist, use HTTP POST (Multer)
         if (selectedFiles.length > 0) {
             const formData = new FormData();
             formData.append('text', inputText);
             if (replyTo) formData.append('replyTo', replyTo._id);
             selectedFiles.forEach(f => {
-                f.type.startsWith('image/') ? formData.append('images', f) : formData.append('files', f);
+                f.type.startsWith('image/') ?  formData.append('images', f) : formData.append('files', f);
             });
 
             const url = type === 'random' 
@@ -159,7 +157,18 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
 
                         {/* Actions: Reply and Like */}
                         <div className="actions">
-                            <img src="reply.png" alt="reply" onClick={() => setReplyTo(msg)} />
+                            <img src="reply.png" alt="reply" onClick={() => {
+                                if(!replyTo ){
+                                    setReplyTo(msg)}
+                                else if(replyTo._id==msg._id){
+                                    setReplyTo(null)
+                                }
+                                else{
+                                    setReplyTo(msg)
+                                }
+                                
+
+                            }} />
                             <img src="heart.png" alt="like" onClick={() => handleReact(msg._id)} />
                         </div>
                     </div>
@@ -173,7 +182,10 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
                 )}
                 <div ref={scrollRef} />
             </div>
-
+            {replyTo && <div className="replyto">
+                    <span>Replying to:</span>
+                    <span> {replyTo.text}</span>
+                </div>}
             {selectedFiles.length > 0 && (
                 <div className="picsChosen">
                     {selectedFiles.map((f, i) => (
@@ -185,6 +197,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
                 </div>
             )}
 
+
             <div className="controls">
                 <input 
                     type="text" 
@@ -194,7 +207,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 />
                 
-                <div className="sendButton">
+                {type != 'random' && <div className="sendButton">
                     <input 
                         type="file" 
                         multiple 
@@ -203,7 +216,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
                     />
                     {/* SVG Icon for attachment */}
                     <svg viewBox="0 0 24 24"><path d="M21 4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h17c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 20V6h17v14H4zm13-11l-3.5 4.5-2.5-3L5 17h14l-2-8z" fill="currentColor"/></svg>
-                </div>
+                </div>}
 
                 <div className="sendIcon" onClick={sendMessage}>
                     <svg  viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/></svg>
