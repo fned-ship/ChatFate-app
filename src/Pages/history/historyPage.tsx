@@ -155,7 +155,6 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
       setError(err?.response?.data?.message ?? "Failed to load more messages.");
     } finally {
       setLoadingMore(false);
-      // Restore scroll position after prepending older messages
       if (container) {
         container.scrollTop = container.scrollHeight - prevScrollHeight;
       }
@@ -279,74 +278,7 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
             </div>
           )}
 
-          { [
-  {
-    _id: '661bc4f5d2a1b2c3d4e5f601',
-    chatId: '69d5a1c2b3e4f5a6b7c8d9e0',
-    chatModel: 'RandomChat',
-    sender: {
-      _id: '69d2bf992b0a11976d2fb07b',
-      firstName: 'Alex',
-      lastName: 'Rivera',
-      userName: 'arivera_99',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'
-    },
-    text: "Hey! Did you get a chance to look at the project requirements?",
-    imagesFiles: [],
-    otherFiles: ['requirements.pdf'],
-    replyTo: null,
-    createdAt: '2026-04-14T14:30:00.000Z',
-    updatedAt: '2026-04-14T14:30:00.000Z'
-  },
-  {
-    _id: '661bc521d2a1b2c3d4e5f602',
-    chatId: '69d5a1c2b3e4f5a6b7c8d9e0',
-    chatModel: 'RandomChat',
-    sender: {
-      _id: '69d3f0b432cd16722c4e9ae5',
-      firstName: 'Jordan',
-      lastName: 'Lee',
-      userName: 'jlee_dev',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan'
-    },
-    text: "Just finished reading them. The UI section looks a bit complex.",
-    imagesFiles: ['https://example.com/storage/ui-mockup.png'],
-    otherFiles: [],
-    replyTo: {
-      _id: '661bc4f5d2a1b2c3d4e5f601',
-      text: "Hey! Did you get a chance to look at the project requirements?",
-      sender: '69d2bf992b0a11976d2fb07b',
-      imagesFiles: [],
-      otherFiles: ['requirements.pdf']
-    },
-    createdAt: '2026-04-14T14:35:15.000Z',
-    updatedAt: '2026-04-14T14:35:15.000Z'
-  },
-  {
-    _id: '661bc544d2a1b2c3d4e5f603',
-    chatId: '69d5a1c2b3e4f5a6b7c8d9e0',
-    chatModel: 'RandomChat',
-    sender: {
-      _id: '69d2bf992b0a11976d2fb07b',
-      firstName: 'Alex',
-      lastName: 'Rivera',
-      userName: 'arivera_99',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'
-    },
-    text: "Agreed, we might need to simplify the dashboard.",
-    imagesFiles: [],
-    otherFiles: [],
-    replyTo: {
-      _id: '661bc521d2a1b2c3d4e5f602',
-      text: "Just finished reading them. The UI section looks a bit complex.",
-      sender: '69d3f0b432cd16722c4e9ae5',
-      imagesFiles: ['https://example.com/storage/ui-mockup.png'],
-      otherFiles: []
-    },
-    createdAt: '2026-04-14T14:40:02.000Z',
-    updatedAt: '2026-04-14T14:40:02.000Z'
-  }
-].map((msg) => {
+          { messages.map((msg) => {
             const isMe = msg.sender._id === currentUserId;
 
             return (

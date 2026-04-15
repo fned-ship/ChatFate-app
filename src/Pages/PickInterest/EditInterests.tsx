@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './editinterestsstyle.css'
+import Cookies from 'js-cookie';
 const EditInterests =()=>{
     const [interests,setInterests]=useState([]) ;
     useEffect(()=>{fetch(import.meta.env.VITE_SERVER_URL+"/api/interests").then(response => {
@@ -8,7 +9,7 @@ const EditInterests =()=>{
     }
     return response.json(); // Parses the body as JSON
   })
-  .then(data =>{ setInterests(data) ; console.log(interests)})
+  .then(data =>{ setInterests(data) ; console.log(data)})
   .catch(error => console.error('Fetch error:', error))},[])
     
 
@@ -21,7 +22,7 @@ const colors:Record<string,string>={
   'Outdoors':'#184000',
   'Music':'#a73e0e'
 }
- const [picked,setPicked]= useState<string[]>([])           
+ const [picked,setPicked]= useState<string[]>(JSON.parse(Cookies.get('user') ).interests.map(i=>i._id))          
 
   return <div className="interestPage">
     <div className='heading1'>
@@ -35,8 +36,8 @@ const colors:Record<string,string>={
       <div style={{display:'flex',flexWrap:'wrap',gap:'10px'}}>
         {
         interests[c].map((i)=>(<div className="intr" 
-            style={{backgroundColor: picked.includes(i)?'green':'gray',border:picked.includes(i)?'1px solid white':'none'}} 
-            onClick={()=>setPicked([...picked,i])}>{i.name}</div>))
+            style={{backgroundColor: picked.includes(i.id)?'green':'gray',border:picked.includes(i.id)?'1px solid white':'1px solid gray'}} 
+            onClick={()=>{setPicked([...picked,i.id]);console.log([...picked,i.id])}}>{i.name}</div>))
         
     }</div>
     </div>:<div></div>
