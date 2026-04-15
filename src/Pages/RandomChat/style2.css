@@ -167,7 +167,7 @@
         }
 
         .friend.not-sent::before{
-            background-image: url("addUser.png");
+            background-image: url("addFriend.png");
         }
         .friend.sent::before{
             background-image: url("sent.png");
