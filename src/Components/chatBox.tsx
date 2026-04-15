@@ -158,7 +158,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
 
                         {/* Actions: Reply and Like */}
                         <div className="actions">
-                            <img src="reply.png" alt="reply" onClick={() => {
+                            <img src="/reply.png" alt="reply" onClick={() => {
                                 if(!replyTo ){
                                     setReplyTo(msg)}
                                 else if(replyTo._id==msg._id){
@@ -170,7 +170,7 @@ const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any)
                                 
 
                             }} />
-                            <img src="heart.png" alt="like" onClick={() => handleReact(msg._id)} />
+                            <img src="/heart.png" alt="like" onClick={() => handleReact(msg._id)} />
                         </div>
                     </div>
                 ))}

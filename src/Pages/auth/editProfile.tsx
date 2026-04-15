@@ -104,7 +104,7 @@ const EditProfilePage: React.FC = () => {
       <div className="rest" style={{gap:'40px'}}>
         <div className="sidebar">
           <div className="photo-upload-group">
-        <img className="photo-preview" src={photoPreview} alt="Profile preview" />
+        <img className="/photo-preview" src={photoPreview} alt="Profile preview" />
           
             <input 
               id="photoInput"
@@ -114,7 +114,7 @@ const EditProfilePage: React.FC = () => {
               onChange={handleFileChange}
               className="photo-input"
             />
-            <img src="camIcon.png" className='photo-input photo-input-icon' style={{width:'24px',height:'24px',right:'3px',bottom:'3px',pointerEvents:'none'}}/>
+            <img src="/camIcon.png" className='photo-input photo-input-icon' style={{width:'24px',height:'24px',right:'3px',bottom:'3px',pointerEvents:'none'}}/>
         </div>
         <button>Edit Interests</button>
         <button>Change Password</button>

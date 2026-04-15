@@ -31,7 +31,7 @@ const colors:Record<string,string>={
     </div>
     {Object.keys(interests).map((c)=>(
       c in colors ?
-      <div className="cat" style={{background:"linear-gradient(transparent,"+colors[c ]+" 90%),url(\""+c+".jpg\")",backgroundPosition:'center center',backgroundRepeat:'no-repeat',backgroundSize:'cover'}}>
+      <div className="cat" style={{background:"linear-gradient(transparent,"+colors[c ]+" 90%),url(\"/"+c+".jpg\")",backgroundPosition:'center center',backgroundRepeat:'no-repeat',backgroundSize:'cover'}}>
       {c}
       <div style={{display:'flex',flexWrap:'wrap',gap:'10px'}}>
         {

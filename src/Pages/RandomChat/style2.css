@@ -75,7 +75,7 @@
 
         .videoscreen{
             flex: 1;
-            background-image: url("unknown.jpg");
+            background-image: url("/unknown.jpg");
             
             background-size: cover;
             background-position: center center;
@@ -96,7 +96,7 @@
             object-fit: cover;
         }
         .second{
-            background-image: url("unknown.jpg");
+            background-image: url("/unknown.jpg");
         }
         .sticker{
             padding: 2%;
@@ -167,10 +167,10 @@
         }
 
         .friend.not-sent::before{
-            background-image: url("addFriend.png");
+            background-image: url("/addFriend.png");
         }
         .friend.sent::before{
-            background-image: url("sent.png");
+            background-image: url("/sent.png");
         }
 
 

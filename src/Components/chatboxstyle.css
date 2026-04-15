@@ -186,7 +186,7 @@
             top:10px ;
             transform: translate(50%,-50%);
             border-radius: 50%;
-            background-image: url(close.png);
+            background-image: url("/close.png");
             background-size: 50% 50%;
             background-repeat: no-repeat;
             background-position: center center;

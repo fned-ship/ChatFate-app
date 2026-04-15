@@ -54,7 +54,7 @@ input:focus{
         }
         .brand::before{
             content: "";
-            background-image: url("moon.png");
+            background-image: url("/moon.png");
             background-size: contain;
             background-repeat:no-repeat ;
             background-position: center center;
