@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import io, { Socket } from "socket.io-client";
-import Peer, { SignalData, Instance } from "simple-peer";
 import './style2.css';
 import ChatBoxComp from "../../Components/chatBox";
 import Cookies from 'js-cookie';

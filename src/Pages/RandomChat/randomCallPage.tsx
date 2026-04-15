@@ -228,7 +228,8 @@ function RandomCallPage() {
         setIsReportModalOpen(false);
         setReportStatus('idle');
         setReportReason('');
-      }, 2000); // Close automatically after success
+        handleSkip();
+      }, 1000); // Close automatically after success
       
     } catch (error) {
       console.error('[Report] Submission failed:', error);
@@ -242,7 +243,7 @@ function RandomCallPage() {
   const nsfwCanvasRef   = useRef<HTMLCanvasElement>(null);
   const weaponCanvasRef = useRef<HTMLCanvasElement>(null);
   const peerRef         = useRef<Instance | null>(null);
-  const streamRef       = useRef<MediaStream | undefined>();
+  const streamRef       = useRef<MediaStream | undefined>(null);
 
   const streamPromiseRef  = useRef<Promise<MediaStream> | null>(null);
   const streamResolverRef = useRef<((s: MediaStream) => void) | null>(null);
@@ -792,11 +793,11 @@ function RandomCallPage() {
             >
               {friendRequestStatus ? 'Request Sent' : 'Add Friend'}
             </button>
-            <button className="btn report" disabled={!callAccepted} onClick={handleManualReport}>!</button>
+            <button className="btn report" disabled={!callAccepted} onClick={()=>setIsReportModalOpen(true)}>!</button>
           </div>
         </div>
       </div>
-      {!isReportModalOpen && (
+      {isReportModalOpen && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
           display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'
