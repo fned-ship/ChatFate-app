@@ -185,24 +185,21 @@
 
 
         .box{
+            flex: 1;
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
             align-items: center;
-            background-color: rgba(0, 0, 0, 0.681);
-            padding: 10px;
-            border-radius:10px;
+            gap: 10px;
         }
-        .box #img {
-            width:100px;
-            height:100px;
+        .box>img {
+            width:50%;
+            aspect-ratio: 1/1;
             object-fit: cover;
-            padding: 3px;
-            border:4px rgb(86, 5, 105) solid ;
             border-radius: 50%;
         }
         .box .details{
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap:20px;
         }
 
@@ -261,5 +258,14 @@
             }
             .buttons{
                 order: 0;
+            }
+            .box{
+                flex: auto;
+                height: 20%;
+                flex-direction: row;
+            }
+            .box>img{
+                height: 90%;
+                width: auto;
             }
         }

@@ -3,17 +3,18 @@ import axios from 'axios';
 import './chatboxstyle.css';
 import Cookies from "js-cookie"
 
-const token = Cookies.get('token'); 
+
+
+const serverURL=import.meta.env.VITE_SERVER_URL ;
+
+const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any) => {
+    const token = Cookies.get('token'); 
 
 const config = {
     headers: {
         Authorization: `Bearer ${token}`
     }
 };
-
-const serverURL=import.meta.env.VITE_SERVER_URL ;
-
-const ChatBoxComp = ({ type, socket, currentUserId, chatId , partnerData }: any) => {
     const [messages, setMessages] = useState<any[]>([]);
     const [inputText, setInputText] = useState("");
     const [isPartnerTyping, setIsPartnerTyping] = useState(false);

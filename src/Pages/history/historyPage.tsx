@@ -104,7 +104,7 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch a specific page; prepend=true when loading older messages
+  
   const fetchPage = useCallback(
     async (pageNum: number, prepend = false) => {
       const { data } = await api.get<MessagesApiResponse>(
@@ -151,7 +151,7 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
 
     try {
       await fetchPage(nextPage, true);
-    } catch (err: any) {
+    } catch (err) {
       setError(err?.response?.data?.message ?? "Failed to load more messages.");
     } finally {
       setLoadingMore(false);
@@ -325,33 +325,22 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
 
 export default function ChatHistory(  ) {
 const currentUserId = Cookies.get('userId');
-  const history=[{
-"randomChatId": "69dd041d3a58e8b5634497d1",
-"dateTalked": "2026-04-13T14:56:29.162Z",
-"partner": {
-"_id": "69d2bf992b0a11976d2fb07b",
-"userName": "fned_youssef",
-"photo": "1775419289144-413331708.png",
-"country": "DK"
-}
-},
-{
-"randomChatId": "69dd041d3a58e8b5634497cf",
-"dateTalked": "2026-04-13T14:56:29.139Z",
-"partner": {
-"_id": "69d2bf992b0a11976d2fb07b",
-"userName": "fned_youssef",
-"photo": "1775419289144-413331708.png",
-"country": "DK"
-}
-}]
+  const [history,setHistory]=useState([])
+  useEffect(()=>{api.get('/api/random-chats/history')
+  .then(res =>{ setHistory(res.data) ; console.log(res.data)})
+  .catch(error => console.error('Fetch error:', error))},[])
+
+
   const [activeEntry, setActiveEntry] = useState<ChatEntry | null>(null);
   const groups = groupByDay(history);
 
   return (
-    <div style={{ padding: "1.5rem", display:'flex',gap:"2rem",alignItems:'center',flex:1,flexDirection:'column'}}>
+    <div style={{ padding: "1.5rem", display:'flex',gap:"2rem",alignItems:'center',width:'100%',minHeight:'100vh',flexDirection:'column',backgroundColor:'var(--mainPurple)'}}>
+      <img src="/bg2.jpg" alt="" className="background"  style={{zIndex:0}}/>
+      <div className="overlay" style={{zIndex:0}} />
+      <span style={{zIndex:1, alignSelf:'start',fontSize:18,fontFamily:'Times New Roman'}}>Your History of random chat and video Calls</span>
       {groups.map(([dateKey, entries]) => (
-        <div key={dateKey} style={{ width:"100%" ,maxWidth:'900px' }}>
+        <div key={dateKey} style={{ width:"100%" ,maxWidth:'900px', zIndex:1 }}>
           <div style={{width:'100%',display:'flex',alignItems:'center', gap:'1rem', marginBottom:'1rem'}}>
             <div
             style={{
@@ -386,7 +375,7 @@ const currentUserId = Cookies.get('userId');
               }} src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${entry.partner.photo}`} alt="" />
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "black" }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "white" }}>
                   {entry.partner.userName}
                 </div>
                 <div style={{ fontSize: 12, color: " #888", marginTop: 2, display: "flex", gap: 8, alignItems: "center" }}>
