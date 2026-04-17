@@ -327,8 +327,8 @@ const currentUserId = Cookies.get('userId');
       const fd = new FormData();
       fd.append('reportedId', pid);
       fd.append('report',     reason);
-      fd.append('importance', '3');
-      fd.append('ai',         'true');
+      fd.append('importance', importance.toString());
+      fd.append('ai',         'false');
       if (imageDataUrl) {
         const blob = await (await fetch(imageDataUrl)).blob();
         fd.append('files', blob, 'evidence.jpg');
