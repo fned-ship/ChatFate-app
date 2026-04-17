@@ -89,6 +89,7 @@ setPicked([...picked,i.id]);console.log([...picked,i.id])
             try{
                 await api.put('/api/profile/interests',{interests:picked});
                 setMessage({ type: 'success', text: 'Profile updated successfully!' });
+                Cookies.set('user',   JSON.stringify({...JSON.parse(Cookies.get('user')),interests:picked}),{ expires: 7 });
             } catch (error) {
       console.error(error);
       setMessage({ type: 'error', text: 'Failed to update interests. Please try again.' });
