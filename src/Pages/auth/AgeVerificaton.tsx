@@ -71,10 +71,11 @@ const AgeVerification = ({age,stopEstimating,goback}) => {
         }
         if(guesses.length==10){
           clearInterval(id)
-          setEstimatedAge(guesses.reduce((sum, val) => sum + val, 0) / 5)
+          const a=guesses.reduce((sum, val) => sum + val, 0) / 10
+          setEstimatedAge(a)
           setTimeout(()=>{
             stopEstimating(false)
-            if((age<18 && estimatedAge>18) || (age>18 && estimatedAge<18)){
+            if((age<18 && a>18) || (age>18 && a<18)){
                goback(1)
             }
            
