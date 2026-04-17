@@ -273,7 +273,7 @@ const socketRef = useRef<Socket | null>(null);
               { partnerData && 
             <div className="box" >
               <span>Randomly Chatting With:</span>
-                <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${partnerData.photo}`} />
+                <img src={`${import.meta.env.VITE_SERVER_URL}/${partnerData.photo}`} />
                 <div className="details" >
                     <p>{partnerData.userName}</p>
                     <span>From</span>
