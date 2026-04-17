@@ -211,7 +211,7 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
                 height: 36,
                 borderRadius: "50%",
                 objectFit:'cover'
-              }} src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${entry.partner.photo}`} alt="" />
+              }} src={`${import.meta.env.VITE_SERVER_URL}/${entry.partner.photo}`} alt="" />
             
             <div>
               <div style={{ fontSize: 15, fontWeight: 500 }}>{entry.partner.userName}</div>
@@ -451,7 +451,7 @@ const currentUserId = Cookies.get('userId');
                 height: 36,
                 borderRadius: "50%",
                 objectFit:'cover'
-              }} src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${entry.partner.photo}`} alt="" />
+              }} src={`${import.meta.env.VITE_SERVER_URL}/${entry.partner.photo}`} alt="" />
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 500, color: "black" }}>

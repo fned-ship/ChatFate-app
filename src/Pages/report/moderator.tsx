@@ -134,9 +134,9 @@ function ReportCard({
                 <img
                   key={img}
                   className="mr-img-thumb"
-                  src={`${API_BASE}/reports/${img}`}
+                  src={`${API_BASE}/${img}`}
                   alt="report"
-                  onClick={() => window.open(`${API_BASE}/reports/${img}`, "_blank")}
+                  onClick={() => window.open(`${API_BASE}/${img}`, "_blank")}
                   onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
                 />
               ))}

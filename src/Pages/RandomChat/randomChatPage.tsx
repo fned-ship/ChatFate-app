@@ -224,7 +224,7 @@ function RandomChatPage() {
           { partnerData && 
             <div className="box" >
                 <div className="img-container" >
-                    <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${partnerData.photo}`} id="img" />
+                    <img src={`${import.meta.env.VITE_SERVER_URL}/${partnerData.photo}`} id="img" />
                 </div>
                 <div className="details" >
                     <p>{partnerData.userName}</p>
