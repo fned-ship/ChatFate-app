@@ -5,7 +5,6 @@ import { getMyChats,getChat } from '../../services/chatServices';
 import { getFriendRequests ,acceptFriendRequest, declineFriendRequest} from '../../services/userServices';
 import Cookies from 'js-cookie';
 import io, { Socket } from "socket.io-client";
-import {Link} from "react-router"
 import { useNavigate } from "react-router-dom";
 
 
@@ -47,6 +46,15 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
 
 
 },[openChat])
+
+
+const handleClickRandomChat=(url)=>{
+    if ( me.interests.length < 3 ){
+        navigate("/interests");
+    }else{
+        navigate(url);
+    }
+}
 
 
 
@@ -161,13 +169,13 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
         {   <div className="random" style={{display:openChat && ! e ?'none':'flex'}}  >
             <span>Hop into a random chat and see what fate has in store for you </span>
             <div className="buttons">
-                <Link to="/random-call"  className="videoCall btn">
+                <button onClick={()=>handleClickRandomChat("/random-call")} className="videoCall btn">
                     Video Call
-                </Link>
+                </button>
                 <span>Or</span>
-                <Link to="/random-chat"  className="textChat btn" >
+                <button onClick={()=>handleClickRandomChat("/random-chat")} className="textChat btn" >
                     Text Chat
-                </Link>
+                </button>
             </div>
         </div>}
     </div>
