@@ -1,7 +1,7 @@
 import  { useRef, useEffect, useState } from 'react';
 import * as faceapi from '@vladmandic/face-api';
 
-const AgeVerification = () => {
+const AgeVerification = ({age,stopEstimating,goback}) => {
   const videoRef = useRef(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [estimatedAge, setEstimatedAge] = useState(null);
@@ -72,16 +72,24 @@ const AgeVerification = () => {
         if(guesses.length==10){
           clearInterval(id)
           setEstimatedAge(guesses.reduce((sum, val) => sum + val, 0) / 5)
+          setTimeout(()=>{
+            stopEstimating(false)
+            if((age<18 && estimatedAge>18) || (age>18 && estimatedAge<18)){
+               goback(1)
+            }
+           
+          },1000)
         }
+
       }
     }, 1000); 
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'min(10%,20px)' 
-    , height:'100vh',width:'100%', gap:'var(--baseFont)'}}>
-      <h2>Age Verification</h2>
-      <h4 style={{textAlign:'center'}}>Our website using an age verification AI to protect our underage users. <br/>This process only takes a few seconds.  Thank your for your time!</h4>
+    , height:'100vh',width:'100%', gap:'var(--baseFont)',position:'relative',zIndex:2,background:'radial-gradient(circle,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%'}}>
+      <h2 style={{color:'white'}}>Age Verification</h2>
+      <h4 style={{textAlign:'center',color:'white'}}>Our website using an age verification AI to protect our underage users. <br/>This process only takes a few seconds.  Thank your for your time!</h4>
       
       {error && <p style={{ color: 'red' }}>{error}</p>}
       
@@ -119,10 +127,11 @@ const AgeVerification = () => {
       
       {estimatedAge && (
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          {estimatedAge >= 18 ? (
-             <p style={{ color: 'green', fontSize: '18px' }}>Access Granted: You appear to be 18 or older.</p>
+          {(age<18 && estimatedAge>18) || (age>18 && estimatedAge<18) ? (
+             <p style={{ color: 'red', fontSize: '18px' }}>Unable to verify age.</p>
           ) : (
-             <p style={{ color: 'red', fontSize: '18px' }}>Access Denied: You appear to be under 18.</p>
+             
+             <p style={{ color: 'green', fontSize: '18px' }}>Age Verified successfully</p>
           )}
         </div>
       )}

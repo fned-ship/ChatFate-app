@@ -396,6 +396,9 @@ background:
   font-size: 26px;
   margin-bottom: 20px;
 }
+.auth-field option{
+  color: white;
+}
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
@@ -403,3 +406,4 @@ background:
   .auth-title   { font-size: 24px; }
   .auth-row     { grid-template-columns: 1fr; }
 }
+

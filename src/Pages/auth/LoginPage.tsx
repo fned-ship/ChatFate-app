@@ -47,7 +47,7 @@ export default function LoginPage() {
       if(data.user.role=="moderator"){
         navigate('/moderator-reports');
       }else{
-        navigate('/myAccount');
+        navigate('/');
       }
     } catch {
       setError('Network error — please try again.');

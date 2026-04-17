@@ -23,7 +23,7 @@ function App() {
   return (
      <BrowserRouter>
       <Routes>
-        <Route path="/myAccount"                      element={<Profile />} />
+        <Route path="/"                      element={<Profile />} />
         <Route path="/random-call" element={<RandomCallPage />} />
         <Route path="/random-chat" element={<RandomChatPage />} />
         <Route path="/interests" element={<EditInterests />} />
@@ -31,13 +31,12 @@ function App() {
         <Route path="/moderator-reports" element={<ModeratorReports />} />
 
         {/* Auth */}
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/signup"                     element={<SignupPage />} />
         <Route path="/auth/check-email"                element={<CheckEmailPage />} />
         <Route path="/auth/verified"                   element={<VerifiedPage />} />
         <Route path="/auth/forgot-password"            element={<ForgotPasswordPage />} />
         <Route path="/auth/reset-password/:token"      element={<ResetPasswordPageWithParams />} />
-        <Route path="/verifyAge"      element={<AgeVerification />} />
         <Route path="/editInfo"      element={<EditProfilePage />} />
         <Route path="/history"      element={<ChatHistory />} />
       </Routes>

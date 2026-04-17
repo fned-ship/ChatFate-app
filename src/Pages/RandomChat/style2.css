@@ -181,9 +181,12 @@
         .report{
             width: 10%;
         }
-
-
-
+        .boxHolder{
+            display: flex;
+            flex: 1;
+            justify-content: flex-end;
+            flex-direction: column;
+        }
         .box{
             flex: 1;
             display: flex;
@@ -199,6 +202,7 @@
         }
         .box .details{
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap:20px;
         }
@@ -259,13 +263,17 @@
             .buttons{
                 order: 0;
             }
+            .boxHolder{
+                flex: auto;
+            }
             .box{
                 flex: auto;
-                height: 20%;
+                height: fit-content;
                 flex-direction: row;
             }
             .box>img{
-                height: 90%;
+                flex: 1;
+                max-width: calc(3 * var(--baseFont2));
                 width: auto;
             }
         }

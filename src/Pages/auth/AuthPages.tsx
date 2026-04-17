@@ -2,21 +2,20 @@
 // CheckEmailPage.tsx  — shown after signup, tells user to verify
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation} from 'react-router-dom';
 import './auth.css';
+
+
 
 export function CheckEmailPage() {
   const { state } = useLocation() as { state?: { email?: string } };
 
   return (
     <div className="auth-root">
+      <span className="brand">hatFate</span>
       <div className="auth-card" style={{ textAlign: 'center' }}>
-        <div className="auth-brand" style={{ justifyContent: 'center' }}>
-          <span className="auth-brand-dot" />
-          <span className="auth-brand-name">ChatFate</span>
-        </div>
+        
 
-        <div className="auth-icon-wrap" style={{ margin: '0 auto 20px' }}>📬</div>
         <h1 className="auth-title">Check your inbox</h1>
         <p className="auth-sub" style={{ marginBottom: 0 }}>
           We sent a verification link to<br />
@@ -95,13 +94,9 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="auth-root">
+      <span className="brand">hatFate</span>
       <div className="auth-card">
-        <div className="auth-brand">
-          <span className="auth-brand-dot" />
-          <span className="auth-brand-name">ChatFate</span>
-        </div>
-
-        <div className="auth-icon-wrap">🔑</div>
+        
 
         {sent ? (
           <>
@@ -207,12 +202,8 @@ export function ResetPasswordPage() {
   return (
     <div className="auth-root">
       <div className="auth-card">
-        <div className="auth-brand">
-          <span className="auth-brand-dot" />
-          <span className="auth-brand-name">ChatFate</span>
-        </div>
+        <span className="brand">hatFate</span>
 
-        <div className="auth-icon-wrap">🛡️</div>
 
         {done ? (
           <>

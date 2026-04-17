@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './auth.css';
+import AgeVerification from './AgeVerificaton';
 
 const SERVER = import.meta.env.VITE_SERVER_URL;
 
@@ -62,6 +63,7 @@ export default function SignupPage() {
   const [preview,  setPreview]  = useState<string>('');
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
+  const [startAgeEstimating,setStartAgeEstimating]=useState(false)
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -98,6 +100,10 @@ export default function SignupPage() {
     if (err) { setError(err); return; }
     setError('');
     setStep(s => s + 1);
+    if (step==1){
+      setStartAgeEstimating(true)
+
+    }
   };
 
   const prevStep = () => { setError(''); setStep(s => s - 1); };
@@ -127,7 +133,7 @@ export default function SignupPage() {
 
   return (
     <div className="auth-root">
-      <div className="auth-card">
+      {!startAgeEstimating && <div className="auth-card">
 
         <div className="auth-brand">
           <span className="auth-brand-dot" />
@@ -274,7 +280,12 @@ export default function SignupPage() {
           Already have an account?{' '}
           <Link to="/auth/login" className="auth-link">Sign in</Link>
         </p>
-      </div>
+      </div>}
+      {
+        startAgeEstimating && <AgeVerification age={ Math.floor((Date.now() - new Date(form.birthDate).getTime()) / 31557600000)}
+        goback={setStep} stopEstimating={setStartAgeEstimating}
+        />
+      }
     </div>
   );
 }

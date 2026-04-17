@@ -86,6 +86,7 @@ const socketRef = useRef<Socket | null>(null);
         const formData = new FormData();
         formData.append('reportedId', partnerId);
         formData.append('report', reportReason);
+        formData.append('ai', 'false');
         formData.append('importance', importance.toString());
         
         selectedFiles.forEach((file) => {
@@ -268,7 +269,7 @@ const socketRef = useRef<Socket | null>(null);
         ))}
       </div>
       <div className="rest" style={{padding:'min(2%,10px)',gap:'10px'}} >
-        <div style={{display:'flex',flex:1,flexDirection:'column',justifyContent:'flex-end'}}>
+        <div className='boxHolder'>
               { partnerData && 
             <div className="box" >
               <span>Randomly Chatting With:</span>
@@ -282,7 +283,7 @@ const socketRef = useRef<Socket | null>(null);
               <div className="chatbuttons">
             <button className="btn skip"   onClick={handleSkip}>Skip</button>
             <button className={`btn friend ${friendRequestStatus?'sent':'not-sent'}`} onClick={addFriend} >{friendRequestStatus?'Request Sent':'Add Friend'}</button>
-            <button className="btn report" >!</button>
+            <button className="btn report" disabled={!partnerData} onClick={()=>setIsReportModalOpen(true)} >!</button>
           </div>
             </div>
         <div style={{display:'flex',flex:2,position:'relative'}}>
@@ -301,7 +302,7 @@ const socketRef = useRef<Socket | null>(null);
         
             
       </div>
-{!isReportModalOpen && (
+{isReportModalOpen && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
           display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'

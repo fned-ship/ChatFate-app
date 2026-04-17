@@ -5,7 +5,7 @@ import './EditProfilePage.css';
 import { updateProfile } from '../../services/userServices';
 import { COUNTRIES } from './SignupPage';
 import ReactCountryFlag from 'react-country-flag';
-
+import { useNavigate } from 'react-router-dom';
 const EditProfilePage: React.FC = () => {
   const [userState, setUserState] = useState({
     userName: '',
@@ -15,6 +15,8 @@ const EditProfilePage: React.FC = () => {
     country: '',
     birthDate: '',
   });
+
+  const navigate=useNavigate();
   
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -104,7 +106,7 @@ const EditProfilePage: React.FC = () => {
       <div className="rest" style={{gap:'40px'}}>
         <div className="sidebar">
           <div className="photo-upload-group">
-        <img className="/photo-preview" src={photoPreview} alt="Profile preview" />
+        <img className="photo-preview" src={photoPreview} alt="Profile preview" />
           
             <input 
               id="photoInput"
@@ -116,8 +118,8 @@ const EditProfilePage: React.FC = () => {
             />
             <img src="/camIcon.png" className='photo-input photo-input-icon' style={{width:'24px',height:'24px',right:'3px',bottom:'3px',pointerEvents:'none'}}/>
         </div>
-        <button>Edit Interests</button>
-        <button>Change Password</button>
+        <button onClick={()=>{navigate('/interests')}}>Edit Interests</button>
+        <button onClick={()=>{navigate('/auth/reset-password/'+Cookies.get('token'))}}>Change Password</button>
         </div>
          <form onSubmit={handleSubmit} className="profile-form">
 

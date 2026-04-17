@@ -178,6 +178,7 @@ function safePeerDestroy(peer: Instance | null) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 function RandomCallPage() {
 
+
   const token         = Cookies.get('token');
 const user          = JSON.parse(Cookies.get('user') ?? '{}');
 const colors        = ["#065535","#133337","#008080","#e6e6fa","#003366","#800000","#ff4040",
@@ -826,7 +827,7 @@ const currentUserId = Cookies.get('userId');
           </div>
         </div>
       </div>
-      {!isReportModalOpen && (
+      {isReportModalOpen && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
           display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'
