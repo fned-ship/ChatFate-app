@@ -5,7 +5,6 @@ import { getMyChats,getChat } from '../../services/chatServices';
 import { getFriendRequests ,acceptFriendRequest, declineFriendRequest} from '../../services/userServices';
 import Cookies from 'js-cookie';
 import io, { Socket } from "socket.io-client";
-import {Link} from "react-router"
 import { useNavigate } from "react-router-dom";
 
 
