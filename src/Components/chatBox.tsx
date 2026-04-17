@@ -150,7 +150,7 @@ const config = {
                         <div className="msg-content">
                             {msg.text}
                             {msg.imagesFiles?.map((img: string) => (
-                                <img key={img} src={`${serverURL}/images/${img}`} className="chat-img" />
+                                <img key={img} src={`${serverURL}/${img}`} className="chat-img" />
                             ))}
                         </div>
 
@@ -178,7 +178,7 @@ const config = {
                 
                 {isPartnerTyping && (
                     <div id='typingIndicator' style={{ display: "flex" , paddingTop:"40px" }}>
-                        <img src={`${serverURL}/imagesProfile/${partnerData.photo}`} alt="" />
+                        <img src={`${serverURL}/${partnerData.photo}`} alt="" />
                         <span>{partnerData.userName} is typing</span>
                     </div>
                 )}

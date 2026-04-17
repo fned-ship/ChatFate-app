@@ -73,7 +73,7 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
     <div className="rest">
         {<div className="friendList" style={{display: openChat && e  ?'none':'flex'}}>
             <div className="profile">
-                <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${me.photo}`} alt="" />
+                <img src={`${import.meta.env.VITE_SERVER_URL}/${me.photo}`} alt="" />
                 <span>Welcome back, {me.userName} !  </span> 
                 <svg onClick={()=>{navigate('/editInfo')}}  xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 600 600" version="1.1">
   <g  transform="matrix(0.95173205,0,0,0.95115787,13.901174,12.168794)" >
@@ -108,7 +108,7 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
                 
                 }}>
                 <div className={`friendProfile Active`}>
-                    <img  src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${friend.participants[0]._id==me._id?
+                    <img  src={`${import.meta.env.VITE_SERVER_URL}/${friend.participants[0]._id==me._id?
                         friend.participants[1].photo:friend.participants[0].photo}`} alt=""/>
                 </div>
                     
@@ -128,7 +128,7 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
             ))}
             
             {showrequests && requests.filter(user=> user.userName.includes(searchTerm)).map(user => (<div className="message request">
-                <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${user.photo}`} alt=""/>
+                <img src={`${import.meta.env.VITE_SERVER_URL}/${user.photo}`} alt=""/>
                 <span>{user.userName} wants to be your friend</span>
                 <svg  onClick={()=>acceptFriendRequest(user._id).then(()=>setrequests(prevItems => prevItems.filter(item => item._id !== user._id)))} viewBox="0 0 24 24" style={{backgroundColor: "rgb(138, 231, 133)"}}  xmlns="http://www.w3.org/2000/svg">
 <path d="M4.89163 13.2687L9.16582 17.5427L18.7085 8" fill="none"  stroke="green" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -144,7 +144,7 @@ useEffect(()=>{if(openChat){socket.emit('join_chat', { chatId: openChat._id });}
         </div>}
         {openChat && <div className="chatbox"   >
             <div className="chatHeader">
-                <div className={`friendProfile Active`}> <img src={`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${partner.photo}`} alt=""/></div>
+                <div className={`friendProfile Active`}> <img src={`${import.meta.env.VITE_SERVER_URL}/${partner.photo}`} alt=""/></div>
                 {partner.userName}
 
                 <button onClick={()=>setOpenChat(null)} >✕</button>

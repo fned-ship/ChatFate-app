@@ -37,7 +37,7 @@ const EditProfilePage: React.FC = () => {
         });
         
         if (me.photo) {
-          setPhotoPreview(`${import.meta.env.VITE_SERVER_URL}/imagesProfile/${me.photo}`);
+          setPhotoPreview(`${import.meta.env.VITE_SERVER_URL}/${me.photo}`);
         }
   }
   useEffect(clearInfo, []);
