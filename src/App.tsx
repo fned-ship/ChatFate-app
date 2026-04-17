@@ -9,7 +9,6 @@ import SignupPage    from './Pages/auth/SignupPage';
 import { CheckEmailPage,VerifiedPage,
   ForgotPasswordPage,
   ResetPasswordPage } from './Pages/auth/AuthPages';
-import AgeVerification from './Pages/auth/AgeVerificaton';
 import RandomChatPage from './Pages/RandomChat/randomChatPage';
 import EditProfilePage from './Pages/auth/editProfile';
 import RandomCallPage from './Pages/RandomChat/randomCallPage';
