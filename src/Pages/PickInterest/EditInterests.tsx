@@ -41,7 +41,18 @@ const colors:Record<string,string>={
   'Education':'green'
 
 }
- const [picked,setPicked]= useState<string[]>(JSON.parse(Cookies.get('user') ).interests.map(i=>i._id)) 
+const [picked, setPicked] = useState<string[]>(() => {
+  try {
+    const userCookie = Cookies.get('user');
+    // Check if cookie exists to avoid parsing errors
+    if (userCookie) {
+      return JSON.parse(userCookie).interests.map((i: any) => i._id);
+    }
+  } catch (error) {
+    console.error("Failed to parse user cookie", error);
+  }
+  return []; // Return default empty array if error or no cookie
+}); 
 
  const [isLoading, setIsLoading] = useState(false);
    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
