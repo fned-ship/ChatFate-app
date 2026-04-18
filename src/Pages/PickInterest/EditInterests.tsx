@@ -41,7 +41,8 @@ const colors:Record<string,string>={
   'Education':'green'
 
 }
- const [picked,setPicked]= useState<string[]>(JSON.parse(Cookies.get('user') ).interests.map(i=>i.id))          
+ const [picked,setPicked]= useState<string[]>(JSON.parse(Cookies.get('user') ).interests.map(i=>i._id)) 
+
  const [isLoading, setIsLoading] = useState(false);
    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -49,8 +50,9 @@ const colors:Record<string,string>={
     <div className='heading1'>
     <span> Pick Your Interests </span>
     <span> (Minimum: 3, Maximum: 15)</span>
-    {loading && <span style={{textAlign:'center',color:'gray',fontSize:10}}>Loading data...</span>}
+    
     </div>
+    {loading && <span style={{textAlign:'center',color:'gray',fontSize:12,fontFamily:'Ultra'}}>Loading data...</span>}
     {Object.keys(interests).map((c)=>(
       <div className="cat" style={{background:"linear-gradient(transparent,"+colors[c ]+" 90%),url(\"/"+c+".jpg\")",backgroundPosition:'center center',backgroundRepeat:'no-repeat',backgroundSize:'cover'}}>
       {c}

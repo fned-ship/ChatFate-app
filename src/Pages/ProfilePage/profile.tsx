@@ -138,7 +138,10 @@ const handleClickRandomChat=(url)=>{
             {showrequests && requests.filter(user=> user.userName.includes(searchTerm)).map(user => (<div className="message request">
                 <img src={`${import.meta.env.VITE_SERVER_URL}/${user.photo}`} alt=""/>
                 <span>{user.userName} wants to be your friend</span>
-                <svg  onClick={()=>acceptFriendRequest(user._id).then(()=>setrequests(prevItems => prevItems.filter(item => item._id !== user._id)))} viewBox="0 0 24 24" style={{backgroundColor: "rgb(138, 231, 133)"}}  xmlns="http://www.w3.org/2000/svg">
+                <svg  onClick={()=>acceptFriendRequest(user._id).then(()=>{
+                    setrequests(prevItems => prevItems.filter(item => item._id !== user._id));
+                    getMyChats().then(res=>{setChats(res.data)})
+                })} viewBox="0 0 24 24" style={{backgroundColor: "rgb(138, 231, 133)"}}  xmlns="http://www.w3.org/2000/svg">
 <path d="M4.89163 13.2687L9.16582 17.5427L18.7085 8" fill="none"  stroke="green" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
                <svg onClick={()=>declineFriendRequest(user._id).then(()=>setrequests(prevItems => prevItems.filter(item => item._id !== user._id)))} xmlns="http://www.w3.org/2000/svg" style={{backgroundColor: "rgb(231, 133, 133)"}}  viewBox="0 0 24 24" fill="none">
