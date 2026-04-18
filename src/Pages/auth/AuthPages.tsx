@@ -4,6 +4,7 @@
 import React from 'react';
 import { Link, useLocation} from 'react-router-dom';
 import './auth.css';
+import Cookies from 'js-cookie';
 
 
 
@@ -250,6 +251,154 @@ export function ResetPasswordPage() {
               <button className="auth-btn" type="submit" disabled={loading}>
                 {loading && <span className="auth-spinner" />}
                 {loading ? 'Updating…' : 'Update Password'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+export function ChangePasswordPage() {
+  const [form, setForm] = React.useState({ 
+    oldPassword: '', 
+    password: '', 
+    confirm: '' 
+  });
+  const [showOld, setShowOld] = React.useState(false);
+  const [showPw, setShowPw] = React.useState(false);
+  const [showCf, setShowCf] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [done, setDone] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const SERVER = import.meta.env.VITE_SERVER_URL;
+
+  const handle = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (form.password.length < 6) { 
+      setError('New password must be at least 6 characters.'); 
+      return; 
+    }
+    if (form.password !== form.confirm) { 
+      setError('New passwords do not match.'); 
+      return; 
+    }
+
+    setLoading(true);
+    try {
+      // Note: This requires the 'Authorization' header because the user is logged in
+      const token = Cookies.get('token'); 
+      const res = await fetch(`${SERVER}/api/auth/change-password`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          oldPassword: form.oldPassword, 
+          newPassword: form.password 
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) { 
+        setError(data.message ?? 'Update failed'); 
+        return; 
+      }
+      setDone(true);
+    } catch {
+      setError('Network error — please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  function EyeIcon({ open }: { open: boolean }) {
+    return open ? (
+      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+    ) : (
+      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    );
+  }
+
+  return (
+    <div className="auth-root">
+      <div className="auth-card">
+        <span className="brand">hatFate</span>
+
+        {done ? (
+          <>
+            <h1 className="auth-title">Password changed!</h1>
+            <p className="auth-sub">Your password has been updated. Keep it secure!</p>
+            <Link to="/">
+              <button className="auth-btn" style={{ marginTop: 8 }}>Back to Profile</button>
+            </Link>
+          </>
+        ) : (
+          <>
+            <h1 className="auth-title">Change password</h1>
+            <p className="auth-sub">Enter your current password to set a new one.</p>
+
+            {error && <div className="auth-error">{error}</div>}
+
+            <form onSubmit={submit}>
+              <div className="auth-field">
+                <label className="auth-label">Current password</label>
+                <div className="auth-input-wrap">
+                  <input
+                    name="oldPassword" type={showOld ? 'text' : 'password'}
+                    className="auth-input has-icon" placeholder="Current password"
+                    value={form.oldPassword} onChange={handle} required autoFocus
+                  />
+                  <button type="button" className="auth-input-icon" onClick={() => setShowOld(s => !s)}>
+                    <EyeIcon open={showOld} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">New password</label>
+                <div className="auth-input-wrap">
+                  <input
+                    name="password" type={showPw ? 'text' : 'password'}
+                    className="auth-input has-icon" placeholder="Min. 6 characters"
+                    value={form.password} onChange={handle} required
+                  />
+                  <button type="button" className="auth-input-icon" onClick={() => setShowPw(s => !s)}>
+                    <EyeIcon open={showPw} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">Confirm new password</label>
+                <div className="auth-input-wrap">
+                  <input
+                    name="confirm" type={showCf ? 'text' : 'password'}
+                    className="auth-input has-icon" placeholder="Repeat new password"
+                    value={form.confirm} onChange={handle} required
+                  />
+                  <button type="button" className="auth-input-icon" onClick={() => setShowCf(s => !s)}>
+                    <EyeIcon open={showCf} />
+                  </button>
+                </div>
+              </div>
+
+              <button className="auth-btn" type="submit" disabled={loading}>
+                {loading && <span className="auth-spinner" />}
+                {loading ? 'Updating…' : 'Change Password'}
               </button>
             </form>
           </>
