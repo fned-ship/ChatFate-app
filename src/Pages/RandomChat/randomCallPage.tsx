@@ -756,7 +756,7 @@ const currentUserId = Cookies.get('userId');
 
           <div className="videoscreen">
             <div className="sticker">
-              <ReactCountryFlag countryCode={user.country} svg style={{ width: '2em', height: '2em' }} />
+              <ReactCountryFlag className="flag" countryCode={user.country} svg style={{ width: '2em', height: '2em' }} />
               <span>You</span>
             </div>
             <video autoPlay muted ref={myVideo} />
@@ -765,7 +765,7 @@ const currentUserId = Cookies.get('userId');
           <div className="videoscreen second" style={{ position: 'relative', overflow: 'hidden' }}>
             <div className="sticker">
               {partnerData && partnerId && (
-                <ReactCountryFlag countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />
+                <ReactCountryFlag className="flag" countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />
               )}
               <span>{callAccepted ? (partnerData?.firstName ?? 'Partner') : '…'}</span>
             </div>

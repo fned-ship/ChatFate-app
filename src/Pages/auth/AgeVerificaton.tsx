@@ -69,9 +69,9 @@ const AgeVerification = ({age,stopEstimating,goback}) => {
         }else{
           setMessage("No Face Detected")
         }
-        if(guesses.length==10){
+        if(guesses.length==5){
           clearInterval(id)
-          const a=guesses.reduce((sum, val) => sum + val, 0) / 10
+          const a=guesses.reduce((sum, val) => sum + val, 0) / 15;
           setEstimatedAge(a)
           setTimeout(()=>{
             stopEstimating(false)
@@ -97,7 +97,7 @@ const AgeVerification = ({age,stopEstimating,goback}) => {
       {!isModelLoaded && !error ? (
         <p>Loading AI models...</p>
       ) : (
-        <div style={{ position: 'relative', width: '100%', maxWidth:'640px', maxHeight: '480px' ,height:'80%', backgroundColor: '#000' }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth:'640px', maxHeight: '480px' ,height:'75%', backgroundColor: '#000' }}>
           <video
             ref={videoRef}
             autoPlay
@@ -129,7 +129,7 @@ const AgeVerification = ({age,stopEstimating,goback}) => {
       {estimatedAge && (
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           {(age<18 && estimatedAge>18) || (age>18 && estimatedAge<18) ? (
-             <p style={{ color: 'red', fontSize: '18px' }}>Unable to verify age.</p>
+             <p style={{ color: 'red', fontSize: '18px' }}>Age estimation does'nt match provided Age. Please Verify birthdate!</p>
           ) : (
              
              <p style={{ color: 'green', fontSize: '18px' }}>Age Verified successfully</p>

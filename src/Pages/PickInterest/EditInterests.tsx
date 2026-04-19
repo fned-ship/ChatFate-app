@@ -37,7 +37,7 @@ const colors:Record<string,string>={
   'Science':'rgb(19 27 53)',
   'Hobbies':'red',
   'Social':'#ff8e3f',
-  'Fitness':'blue',
+  'Fitness':'#2d4128',
   'Education':'green'
 
 }
