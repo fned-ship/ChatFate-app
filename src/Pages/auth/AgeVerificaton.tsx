@@ -71,7 +71,7 @@ const AgeVerification = ({age,stopEstimating,goback}) => {
         }
         if(guesses.length==5){
           clearInterval(id)
-          const a=guesses.reduce((sum, val) => sum + val, 0) / 15;
+          const a=guesses.reduce((sum, val) => sum + val, 0) / 5;
           setEstimatedAge(a)
           setTimeout(()=>{
             stopEstimating(false)
