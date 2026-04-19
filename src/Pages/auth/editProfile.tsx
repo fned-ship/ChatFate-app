@@ -119,7 +119,7 @@ const EditProfilePage: React.FC = () => {
             <img src="/camIcon.png" className='photo-input photo-input-icon' style={{width:'24px',height:'24px',right:'3px',bottom:'3px',pointerEvents:'none'}}/>
         </div>
         <button onClick={()=>{navigate('/interests')}}>Edit Interests</button>
-        <button onClick={()=>{navigate('/auth/reset-password/'+Cookies.get('token'))}}>Change Password</button>
+        <button onClick={()=>{navigate('/change-password')}}>Change Password</button>
         </div>
          <form onSubmit={handleSubmit} className="profile-form">
 
