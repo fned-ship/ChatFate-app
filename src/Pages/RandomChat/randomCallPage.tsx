@@ -8,8 +8,8 @@ import './style2.css';
 import ChatBoxComp from "../../Components/chatBox";
 import Cookies from 'js-cookie';
 import ReactCountryFlag from 'react-country-flag';
-
-
+import { HiMoon } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
 
 
 // ── ICE ───────────────────────────────────────────────────────────────────────
@@ -219,8 +219,29 @@ const currentUserId = Cookies.get('userId');
   const [importance, setImportance]               = useState<number>(1);
   const [selectedFiles, setSelectedFiles]         = useState<File[]>([]);
   const [reportStatus, setReportStatus]           = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [elapsed, setElapsed]                     = useState(0);
+  const elapsedRef                                = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [chatOpen, setChatOpen]                   = useState(false);
+  const [micMuted, setMicMuted]                   = useState(false);
 
+  useEffect(() => {
+    elapsedRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => { if (elapsedRef.current) clearInterval(elapsedRef.current); };
+  }, []);
 
+  const fmtTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  };
+
+  const toggleMic = useCallback(() => {
+    if (!streamRef.current) return;
+    streamRef.current.getAudioTracks().forEach(track => {
+      track.enabled = !track.enabled;
+    });
+    setMicMuted(prev => !prev);
+  }, []);
 
 
   const submitReportManually = async () => {
@@ -289,6 +310,8 @@ const currentUserId = Cookies.get('userId');
   const contentWarnRef   = useRef<ContentWarning>('none');
   const detectionTypeRef = useRef<DetectionType>('nsfw');
   const autoReportedRef  = useRef(false);
+
+  const navigate = useNavigate();
 
   // Keep refs in sync with state
   useEffect(() => { partnerIdRef.current     = partnerId;      }, [partnerId]);
@@ -716,73 +739,119 @@ const currentUserId = Cookies.get('userId');
 
   return (
     <main className="randomchatpage">
-      <span className="brand">hatFate</span>
-      <img src="/bg2.jpg" alt="" className="background" />
-      <div className="overlay" />
-
-      {/* Hidden canvases for frame capture */}
+      {/* Hidden canvases */}
       <canvas ref={nsfwCanvasRef}   style={{ display: 'none' }} />
       <canvas ref={weaponCanvasRef} style={{ display: 'none' }} />
 
-      <div className="common">
-        <h2 className="title">Common Interests:</h2>
-        {matchPayload?.commonInterests?.map((int: string, index: number) => (
-          <div key={int} className="interest" style={{ backgroundColor: colors[index] }}>{int}</div>
-        ))}
+      {/* ── Navbar ── */}
+      <nav className="rc-navbar">
+        <span className="brand"><HiMoon style={{color:"#a855f7"}} />hatFate</span>
+        <div className="rc-nav-actions">
+          <button className="history-back-btn" onClick={() => navigate(-1)}>
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Back
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Hero ── */}
+      <div className="rc-hero">
+        <div className="rc-pref-pill">
+          <span className="rc-pref-dot" />
+          Matching Preference: Worldwide
+          <span style={{ opacity: 0.4, marginLeft: 2 }}>ⓘ</span>
+        </div>
+        <h1>Destiny is calling…</h1>
+        <p className="rc-timer">Time elapsed: {fmtTime(elapsed)}</p>
       </div>
 
-      {/* Model loading pill */}
-      {!modelReady && (
-        <div style={{
-          position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(20,20,30,0.9)', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 99, padding: '7px 16px', fontSize: 12,
-          color: 'rgba(255,255,255,0.5)', zIndex: 100,
-          display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
-        }}>
-          <div style={{
-            width: 10, height: 10, borderRadius: '50%',
-            borderWidth: 2, borderStyle: 'solid',
-            borderColor: 'transparent transparent transparent rgba(108,99,255,0.8)',
-            animation: 'spin 0.8s linear infinite',
-          }} />
-          {loadingLabel}
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* ── Common interests ── */}
+      {matchPayload?.commonInterests?.length > 0 && (
+        <div className="rc-common">
+          <span className="rc-common-label">Common interests:</span>
+          {matchPayload.commonInterests.map((int: string, i: number) => (
+            <span key={int} className="rc-common-tag" style={{ borderColor: colors[i] + '55', color: colors[i] }}>{int}</span>
+          ))}
         </div>
       )}
 
-      <div className="screen">
-        <div className="cams">
+      {/* ── Main content: two video cards side by side ── */}
+      <div className="rc-content">
 
-          <div className="videoscreen">
-            <div className="sticker">
-              <ReactCountryFlag className="flag" countryCode={user.country} svg style={{ width: '2em', height: '2em' }} />
-              <span>You</span>
-            </div>
-            <video autoPlay muted ref={myVideo} />
+        {/* Left: My video */}
+        <div className="rc-local-card">
+          <div className="rc-card-topbar">
+            <span className="rc-live-badge">
+              <span className="rc-live-dot" />
+              LIVE PREVIEW
+            </span>
+            {user.country && (
+              <span className="rc-country-badge">
+                <ReactCountryFlag countryCode={user.country} svg style={{ width: '14px', height: '14px', borderRadius: '50%' }} />
+                {user.country}
+              </span>
+            )}
           </div>
-
-          <div className="videoscreen second" style={{ position: 'relative', overflow: 'hidden' }}>
-            <div className="sticker">
-              {partnerData && partnerId && (
-                <ReactCountryFlag className="flag" countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />
-              )}
-              <span>{callAccepted ? (partnerData?.firstName ?? 'Partner') : '…'}</span>
+          <div className="rc-video-area">
+            <video autoPlay muted ref={myVideo} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div className="rc-user-info">
+            <div className="rc-user-name-block">
+              <span className="rc-user-name">{user.firstName ?? 'You'}</span>
+              <span className="rc-user-status">{micMuted ? 'Mic off' : 'Ready to chat'}</span>
             </div>
+            <div className="rc-cam-controls">
+              <button
+                className={`rc-cam-btn${micMuted ? ' off' : ''}`}
+                title={micMuted ? 'Unmute mic' : 'Mute mic'}
+                onClick={toggleMic}
+              >
+                {micMuted ? '🔇' : '🎤'}
+              </button>
+            </div>
+          </div>
+        </div>
 
-            <video
-              autoPlay
-              ref={userVideo}
-              style={{
-                opacity:    partnerStatus === 'connected' ? 1 : 0,
-                transition: 'opacity 0.4s, filter 0.5s',
-                filter:     contentWarning !== 'none' ? 'blur(20px)' : 'none',
-              }}
-            />
-
-            <PartnerOverlay status={partnerStatus} />
-
-            {partnerStatus === 'connected' && (
+        {/* Right: Partner video */}
+        <div className="rc-partner-card">
+          {partnerStatus !== 'connected' ? (
+            <div className="rc-searching">
+              <div className="rc-searching-icon">
+                <span className="rc-searching-star">✦</span>
+              </div>
+              <div>
+                <h3>{OVERLAY_CONFIG[partnerStatus as Exclude<PartnerStatus,'connected'>]?.line1 ?? 'Finding you a partner…'}</h3>
+                <p>{OVERLAY_CONFIG[partnerStatus as Exclude<PartnerStatus,'connected'>]?.line2 ?? 'This usually takes a few seconds.'}</p>
+              </div>
+              {matchPayload?.commonInterests?.length > 0 && (
+                <div className="rc-interest-tags">
+                  {matchPayload.commonInterests.map((int: string) => (
+                    <span key={int} className="rc-tag">{int}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rc-partner-video-wrap">
+              <div className="rc-card-topbar">
+                {partnerData && partnerId && (
+                  <span className="rc-country-badge">
+                    <ReactCountryFlag countryCode={partnerData.country} svg style={{ width: '14px', height: '14px', borderRadius: '50%' }} />
+                    {partnerData.country}
+                  </span>
+                )}
+              </div>
+              <video
+                autoPlay ref={userVideo}
+                style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                  opacity: partnerStatus === 'connected' ? 1 : 0,
+                  transition: 'opacity 0.4s, filter 0.5s',
+                  filter: contentWarning !== 'none' ? 'blur(20px)' : 'none',
+                }}
+              />
               <ContentWarningOverlay
                 warning={contentWarning}
                 detectionType={detectionType}
@@ -790,12 +859,52 @@ const currentUserId = Cookies.get('userId');
                 onReport={handleManualReport}
                 onSkip={handleSkip}
               />
-            )}
-          </div>
-
+            </div>
+          )}
         </div>
 
-        <div className="chatcontainer">
+      </div>
+
+      {/* ── Bottom action bar ── */}
+      <div className="rc-bottom-bar">
+        <button className="rc-action-btn rc-btn-skip" onClick={handleSkip}>
+          ↺ Skip Match
+        </button>
+        <button
+          className={`rc-action-btn rc-btn-friend ${friendRequestStatus ? 'sent' : ''}`}
+          disabled={!callAccepted}
+          onClick={() => {
+            if (!partnerId) return;
+            fetch(`${import.meta.env.VITE_SERVER_URL}/api/friends/request/${partnerId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            }).then(r => r.json()).then(d => {
+              console.log('[Friend]', d.message);
+              setFriendRequestStatus(true);
+            }).catch(console.error);
+          }}
+        >
+          {friendRequestStatus ? '✓ Request Sent' : '＋ Add Friend'}
+        </button>
+        {randomChatData && (
+          <button
+            className={`rc-action-btn rc-btn-chat${chatOpen ? ' active' : ''}`}
+            onClick={() => setChatOpen(o => !o)}
+            title="Toggle chat"
+          >
+            💬 Chat
+          </button>
+        )}
+        <button className="rc-action-btn rc-btn-report" disabled={!callAccepted} onClick={() => setIsReportModalOpen(true)}>⚑</button>
+      </div>
+
+      {/* ── Slide-in chat panel ── */}
+      <div className={`rc-chat-panel${chatOpen ? ' open' : ''}`}>
+        <div className="rc-chat-panel-header">
+          <span>Chat</span>
+          <button className="rc-chat-close" onClick={() => setChatOpen(false)}>✕</button>
+        </div>
+        <div className="rc-chat-panel-body">
           {randomChatData && (
             <ChatBoxComp
               type="random"
@@ -805,181 +914,229 @@ const currentUserId = Cookies.get('userId');
               partnerData={partnerData}
             />
           )}
-          <div className="chatbuttons">
-            <button className="btn skip" onClick={handleSkip}>Skip</button>
-            <button
-              className={`btn friend ${friendRequestStatus ? 'sent' : 'not-sent'}`}
-              disabled={!callAccepted}
-              onClick={() => {
-                if (!partnerId) return;
-                fetch(`${import.meta.env.VITE_SERVER_URL}/api/friends/request/${partnerId}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                }).then(r => r.json()).then(d => {
-                  console.log('[Friend]', d.message);
-                  setFriendRequestStatus(true);
-                }).catch(console.error);
-              }}
-            >
-              {friendRequestStatus ? 'Request Sent' : 'Add Friend'}
-            </button>
-            <button className="btn report" disabled={!callAccepted} onClick={()=>setIsReportModalOpen(true)}>!</button>
-          </div>
         </div>
       </div>
-      {isReportModalOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'
-        }}>
-          <div style={{
-            background: '#151520', padding: '24px', borderRadius: '12px',
-            width: '90%', maxWidth: '400px', color: '#fff',
-            display: 'flex', flexDirection: 'column', gap: '16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)', border: '1px solid #2a2a3a',
-            maxHeight: '90vh', overflowY: 'auto' // Added scroll for smaller screens
-          }}>
-            <h3 style={{ margin: 0, color: '#ff4d4f', fontSize: '20px' }}>Report User</h3>
-            
-            {reportStatus === 'success' ? (
-              <p style={{ color: '#4BB543', margin: 0 }}>Report submitted successfully. Thank you.</p>
-            ) : (
-              <>
-                <p style={{ margin: 0, color: '#aaa', fontSize: '14px' }}>
-                  Please describe the inappropriate behavior. Your report will be reviewed by our team.
-                </p>
-                
-                <textarea 
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  placeholder="Reason for reporting..."
-                  style={{
-                    width: '100%', minHeight: '100px', padding: '12px',
-                    borderRadius: '8px', background: '#0a0a10', color: '#fff',
-                    border: '1px solid #333', resize: 'vertical', outline: 'none'
-                  }}
-                />
+      {/* Backdrop to close chat on outside click */}
+      {chatOpen && <div className="rc-chat-backdrop" onClick={() => setChatOpen(false)} />}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-  <label style={{ color: '#aaa', fontSize: '14px' }}>Importance Level:</label>
-  <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-    {[1, 2, 3, 4, 5].map((num) => {
-      const isSelected = importance === num;
-      const severityColors = ['#066000', '#5e9d16', '#dac400', '#ffa726', '#f81a1d'];
+      {/* ── Footer ── */}
+      <footer className="rc-footer">
+        <span>© 2024 ChatFate. Connect with destiny.</span>
+        <div className="rc-footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Safety</a>
+          <a href="#">Help Center</a>
+        </div>
+      </footer>
 
-      return (
-        <button
-          key={num}
-          type="button"
-          onClick={() => setImportance(num)}
-          style={{
-            height:30,
-            aspectRatio:'1/1',
-            borderRadius: '50vh',
-            border: '1px solid',
-            borderColor: isSelected ? 'white' : 'transparent',
-            background: severityColors[num-1],
-            color: isSelected ? 'white' : '#dfdfdf',
-            fontSize: '14px',
-            fontWeight: isSelected ? '700' : '400',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          {num}
-        </button>
-      );
-    })}
-  </div>
-</div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                  <div style={{position:'relative', padding:'8px',display:"flex",alignItems:'center',gap:8,backgroundColor:'darkblue',borderRadius:8,width:'fit-content'}}>
-                    <label style={{ color: 'white', fontSize: '14px', fontWeight:'300' }}>Attach Evidence:</label>
-                  <img height={16} width={16} src="/camIcon.png"/>
-                  <input
-                    type="file" 
-                    multiple 
-                    accept="image/*"
-                    onChange={(e)=>{setSelectedFiles(prev => [...prev, ...Array.from(e.target.files)]);}}
-                    style={{
-                      position:'absolute',
-                      top:0,left:0,width:'100%',height:'100%',zIndex:0,
-                      color: 'transparent',
-                      background: 'transparent',
-                      cursor: 'pointer'
-                    }}
-                  />
-
-                  </div>
-                  
-                  
-                  {selectedFiles.length > 0 && (
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
-                      {selectedFiles.map((file, index) => (
-                        <div key={`${file.name}-${index}`} style={{ position: 'relative', width: '64px', height: '64px' }}>
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            style={{ 
-                              width: '100%', height: '100%', objectFit: 'cover', 
-                              borderRadius: '8px', border: '1px solid #333' 
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>     setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
-                            style={{
-                              position: 'absolute', top: '-6px', right: '-6px',
-                              background: '#ff4d4f', color: '#fff', border: 'none',
-                              borderRadius: '50%', width: '20px', height: '20px',
-                              fontSize: '12px', cursor: 'pointer', display: 'flex',
-                              alignItems: 'center', justifyContent: 'center', padding: 0,
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                {reportStatus === 'error' && (
-                  <p style={{ color: '#ff4d4f', margin: 0, fontSize: '13px' }}>Failed to submit. Please try again.</p>
-                )}
-                
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                  <button 
-                    type="button"
-                    onClick={resetModal}
-                    style={{
-                      padding: '8px 16px', borderRadius: '6px', border: 'none',
-                      background: '#333', color: '#fff', cursor: 'pointer', fontWeight: 600
-                    }}
-                    disabled={reportStatus === 'submitting'}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    onClick={submitReportManually}
-                    style={{
-                      padding: '8px 16px', borderRadius: '6px', border: 'none',
-                      background: '#ff4d4f', color: '#fff', fontWeight: 600,
-                      cursor: reportReason.trim() ? 'pointer' : 'not-allowed',
-                      opacity: (reportStatus === 'submitting' || !reportReason.trim()) ? 0.6 : 1
-                    }}
-                    disabled={reportStatus === 'submitting' || !reportReason.trim()}
-                  >
-                    {reportStatus === 'submitting' ? 'Submitting...' : 'Submit'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+      {/* ── Model loading pill ── */}
+      {!modelReady && (
+        <div className="rc-loading-pill">
+          <span className="rc-loading-spin" />
+          {loadingLabel}
         </div>
       )}
+      {/* ── Report modal ── */}
+{isReportModalOpen && (
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 9999,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)'
+  }}>
+    <div style={{
+      background: '#0d0d14',
+      padding: '28px 24px',
+      borderRadius: '14px',
+      width: '90%',
+      maxWidth: '400px',
+      color: '#fff',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
+      border: '1px solid #1e1e2e',
+      maxHeight: '90vh',
+      overflowY: 'auto'
+    }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ fontSize: '20px', color: '#e74c3c' }}>🚩</span>
+        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600, letterSpacing: '0.01em' }}>
+          Report user
+        </h3>
+      </div>
+
+      {reportStatus === 'success' ? (
+        <>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            background: '#0a1f12', border: '1px solid #1a4a28',
+            borderRadius: '10px', padding: '14px 16px',
+            color: '#4caf81', fontSize: '14px'
+          }}>
+            ✓ Report submitted. Thank you for helping keep the platform safe.
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={resetModal}
+              style={{
+                padding: '9px 18px', borderRadius: '8px',
+                border: '1px solid #1e1e2e', background: '#10102a',
+                color: '#8888bb', fontSize: '13px', fontWeight: 500, cursor: 'pointer'
+              }}
+            >Close</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p style={{ margin: 0, color: '#6b6b8a', fontSize: '13px', lineHeight: 1.6 }}>
+            Describe the inappropriate behavior. Your report will be reviewed by our team.
+          </p>
+
+          <hr style={{ height: '1px', background: '#1e1e2e', border: 'none', margin: 0 }} />
+
+          {/* Reason textarea */}
+          <textarea
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            placeholder="Reason for reporting…"
+            style={{
+              width: '100%', minHeight: '96px', padding: '12px 14px',
+              borderRadius: '10px', background: '#07070f', color: '#d0d0e0',
+              border: '1px solid #1e1e2e', resize: 'vertical', outline: 'none',
+              fontSize: '13px', fontFamily: 'inherit', lineHeight: 1.6
+            }}
+          />
+
+          {/* Severity */}
+          <div>
+            <p style={{
+              fontSize: '12px', fontWeight: 500, color: '#6b6b8a',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px'
+            }}>
+              Severity level
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              {[1, 2, 3, 4, 5].map((num) => {
+                const isSelected = importance === num;
+                const severityColors = ['#1a5c1a', '#3d6e12', '#7a6200', '#8a4a00', '#8a1212'];
+                return (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setImportance(num)}
+                    style={{
+                      width: '36px', height: '36px', borderRadius: '50%',
+                      border: `1.5px solid ${isSelected ? '#fff' : 'transparent'}`,
+                      background: severityColors[num - 1],
+                      color: '#fff',
+                      fontSize: '13px', fontWeight: isSelected ? 700 : 500,
+                      cursor: 'pointer', transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 0 0 2px rgba(255,255,255,0.12)' : 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                  >{num}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Attach evidence */}
+          <div>
+            <p style={{
+              fontSize: '12px', fontWeight: 500, color: '#6b6b8a',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px'
+            }}>
+              Attach evidence
+            </p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px', background: '#10102a',
+              border: '1px solid #1e1e2e', borderRadius: '8px',
+              color: '#8888bb', fontSize: '13px', cursor: 'pointer',
+              position: 'relative', overflow: 'hidden'
+            }}>
+              📷 Upload screenshots
+              <input
+                type="file" multiple accept="image/*"
+                onChange={(e) => setSelectedFiles(prev => [...prev, ...Array.from(e.target.files)])}
+                style={{
+                  position: 'absolute', inset: 0, opacity: 0,
+                  cursor: 'pointer', width: '100%', height: '100%'
+                }}
+              />
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                {selectedFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} style={{ position: 'relative', width: '60px', height: '60px' }}>
+                    <img
+                      src={URL.createObjectURL(file)}
+                      style={{
+                        width: '100%', height: '100%', objectFit: 'cover',
+                        borderRadius: '8px', border: '1px solid #1e1e2e'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
+                      style={{
+                        position: 'absolute', top: '-6px', right: '-6px',
+                        background: '#c0392b', color: '#fff', border: 'none',
+                        borderRadius: '50%', width: '18px', height: '18px',
+                        fontSize: '10px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0
+                      }}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {reportStatus === 'error' && (
+            <p style={{ color: '#e74c3c', margin: 0, fontSize: '13px' }}>
+              Failed to submit. Please try again.
+            </p>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '4px' }}>
+            <button
+              type="button"
+              onClick={resetModal}
+              disabled={reportStatus === 'submitting'}
+              style={{
+                padding: '9px 18px', borderRadius: '8px',
+                border: '1px solid #1e1e2e', background: '#10102a',
+                color: '#8888bb', fontSize: '13px', fontWeight: 500, cursor: 'pointer'
+              }}
+            >Cancel</button>
+            <button
+              type="button"
+              onClick={submitReportManually}
+              disabled={reportStatus === 'submitting' || !reportReason.trim()}
+              style={{
+                padding: '9px 20px', borderRadius: '8px', border: 'none',
+                background: '#c0392b', color: '#fff',
+                fontSize: '13px', fontWeight: 600,
+                cursor: (reportStatus === 'submitting' || !reportReason.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (reportStatus === 'submitting' || !reportReason.trim()) ? 0.45 : 1,
+                display: 'flex', alignItems: 'center', gap: '6px',
+                transition: 'background 0.15s, opacity 0.15s'
+              }}
+            >
+              {reportStatus === 'submitting' ? 'Submitting…' : 'Submit report'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+)}
     </main>
   );
 }

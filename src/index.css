@@ -41,7 +41,7 @@ input:focus{
 ::-webkit-scrollbar-thumb:hover {
   border: 0 ;
 }
-.brand{
+/* .brand{
             color: white;
             font-size: var(--baseFont);
             font-weight: bold;
@@ -51,8 +51,8 @@ input:focus{
             align-items: center;
             height: var(--baseFont);
             gap: 2%;
-        }
-        .brand::before{
+        } */
+        /* .brand::before{
             content: "";
             background-image: url("/moon.png");
             background-size: contain;
@@ -61,7 +61,7 @@ input:focus{
             display: block;
             height: 100%;
             aspect-ratio: 1/1;
-        }
+        } */
 
 select,
 ::picker(select) {

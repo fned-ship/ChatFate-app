@@ -1,219 +1,413 @@
-:root{
-  --main:#18172c;
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #0f0f1a;
+  --surface-2: #161622;
+  --border: rgba(255,255,255,0.07);
+  --border-focus: rgba(124,58,237,0.5);
+  --header-bg: rgba(10,10,15,0.85);
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --purple-glow: rgba(124,58,237,0.25);
+  --purple-dim: rgba(124,58,237,0.1);
+  --gold: #f0c040;
+  --gold-dark: #c49a0a;
+  --green: #22c55e;
+  --text: #ffffff;
+  --text-muted: rgba(255,255,255,0.4);
+  --text-sub: rgba(255,255,255,0.65);
+  --label-bg: #0f0f1a;
+  --input-bg: rgba(255,255,255,0.04);
+  --input-bg-focus: rgba(124,58,237,0.05);
+  --header-h: 56px;
 }
 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── PAGE ────────────────────────────────────────── */
 .profile-container {
   width: 100%;
   min-height: 100vh;
-  padding: 30px;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 70% 50% at 70% 5%,  rgba(124,58,237,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 15% 85%, rgba(168,85,247,0.06) 0%, transparent 50%);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
   display: flex;
   flex-direction: column;
-  gap: var(--baseFont);
-  background: linear-gradient(transparent, var(--main) 15%),url('/bg5.avif');
-  color: white;
-  font-family: 'Roboto'
 }
 
-.profile-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: white;
-  font-family: 'Times New Roman', Times, serif;
-  margin-top: 0;
-  margin-bottom: 24px;
+/* ── STICKY HEADER ───────────────────────────────── */
+.edit-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--header-h);
+  background: var(--header-bg);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
-/* Alerts */
-.alert-message {
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-bottom: 24px;
-  font-size: 14px;
+.edit-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
 }
-.alert-success {
-  color: #137333;
-  border: 1px solid #024f18;
-}
-.alert-error {
-  color: #c5221f;
-  border: 1px solid #6b2823;
+.edit-back-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+
+.edit-header-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
 }
 
-/* Form Layout */
+/* ── BODY ────────────────────────────────────────── */
+.profile-body {
+  flex: 1;
+  padding: 40px 32px;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  width: 160px;
+  position: sticky;
+  top: calc(var(--header-h) + 24px);
+}
+
+/* Avatar upload */
+.photo-upload-group {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.photo-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(124,58,237,0.5);
+  display: block;
+  transition: border-color 0.2s;
+}
+.photo-upload-group:hover .photo-preview { border-color: var(--purple-light); }
+
+.photo-input {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  opacity: 0;
+  z-index: 2;
+}
+
+.photo-input-icon {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 5px;
+  pointer-events: none;
+  object-fit: contain;
+  z-index: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.photo-upload-group:hover .photo-input-icon { opacity: 1; }
+
+/* Sidebar buttons */
+.sidebar-btn {
+  width: 100%;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  text-align: center;
+}
+.sidebar-btn:hover {
+  background: var(--surface-2);
+  border-color: rgba(124,58,237,0.3);
+  color: var(--text);
+}
+
+/* ── FORM ────────────────────────────────────────── */
 .profile-form {
   flex: 1;
-  max-width: 800px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 24px;
+  min-width: 0;
 }
-.sidebar{
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: center;
-}
-.sidebar>button{
-  width: 150px;
-  font-size: 14px;
-  padding: min(10%,10px);
-  margin-top: 15px ;
-  background: radial-gradient(#dabe37,#6f5d01);
-  color: white;
-  border-radius: 10px;
 
-}
 .form-row {
   display: flex;
   gap: 20px;
 }
+.form-row .form-group { flex: 1; }
 
-.form-row .form-group {
-  flex: 1;
-}
-
-
-
-/* Inputs & Labels */
+/* ── FORM GROUP (floating label) ─────────────────── */
 .form-group {
   position: relative;
 }
 
 .form-group label {
-    position: absolute;
-    top: 0;
-    left: 20px;
-    transform: translateY(-50%);
-    background-color: var(--main);
-  font-size: 14px;
+  position: absolute;
+  top: 0;
+  left: 16px;
+  transform: translateY(-50%);
+  background: var(--label-bg);
+  font-size: 11px;
   font-weight: 500;
-  color: #c7c7c7;
-  padding: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  transition: color 0.2s;
+  z-index: 1;
+  white-space: nowrap;
 }
 
 .form-group input[type="text"],
 .form-group input[type="date"],
 .year,
 .form-group select {
-    width: 100%;
-  padding: 15px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 15px;
-  background-color: var(--main);
-  color: white;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  padding: 13px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .form-group input[type="text"]:focus,
 .form-group input[type="date"]:focus,
-
 .form-group select:focus {
   outline: none;
-  border-color: #f6e63b;
-}
-.form-group:has(input[type="text"]:focus) label,
-.form-group:has(input[type="date"]:focus) label,
-.form-group:has(select:focus) label{
-  color:#f6e63b ;
-}
-/* Photo Upload Area */
-.photo-upload-group {
-  position: relative;
-  width: fit-content;
+  border-color: var(--border-focus);
+  background: var(--input-bg-focus);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
 }
 
-.photo-preview-wrapper {
-  width: fit-content;
+.form-group:has(input:focus) label,
+.form-group:has(select:focus) label {
+  color: var(--purple-light);
 }
 
-.photo-preview {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #e5e7eb;
+.form-group select option {
+  background: #1a1a2e;
+  color: var(--text);
 }
 
-.photo-placeholder {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background-color: #f3f4f6;
+/* Year display */
+.year {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #9ca3af;
-  border: 1px dashed #d1d5db;
-}
-
-.photo-input {
-    width: 30px;
-    height: 30px;
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  border-radius: 50%;
-  background-color: rgb(0, 0, 0);
-  
-}
-
-.photo-label {
-  font-size: 14px !important;
-  color: #374151 !important;
-}
-
-.photo-input {
+  color: var(--text-sub);
+  cursor: default;
+  border-color: var(--border) !important;
   font-size: 14px;
-  color: #6b7280;
 }
 
+/* ── BIRTHDATE ROW ───────────────────────────────── */
+.birthdate-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
 
-/* Submit Button */
+.birthdate-row > .birthdate-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.birthdate-row .form-group { flex: 1; min-width: 80px; }
+
+/* ── GENDER ROW ──────────────────────────────────── */
+.form-group-sex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.form-group-sex > span {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 50px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-sub);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  user-select: none;
+}
+.radio-label:hover {
+  border-color: rgba(124,58,237,0.3);
+  background: var(--purple-dim);
+  color: var(--text);
+}
+.radio-label:has(input:checked) {
+  border-color: var(--purple-light);
+  background: rgba(168,85,247,0.15);
+  color: var(--purple-light);
+}
+
+.radio-label input[type="radio"] {
+  display: none;
+}
+
+/* ── SECTION DIVIDER ─────────────────────────────── */
+.form-section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: -8px;
+}
+
+/* ── ACTIONS ─────────────────────────────────────── */
 .form-actions {
   display: flex;
-  margin-top: 10px;
   gap: 10px;
-  align-self: end;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .submit-button {
-  padding: 12px 20px;
-   background-color: #0bb812;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 500;
+  padding: 11px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  border: none;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
 }
 
-.submit-button:disabled {
-  background-color: #93fdad;
+.submit-button[type="submit"] {
+  background: var(--purple);
+  color: white;
+  box-shadow: 0 4px 16px var(--purple-glow);
+}
+.submit-button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px var(--purple-glow);
+}
+.submit-button[type="submit"]:disabled {
+  background: rgba(124,58,237,0.4);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.form-group-sex{
-  display:flex;
-  gap: 20px;
+.submit-button.cancel-btn {
+  background: var(--surface);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+}
+.submit-button.cancel-btn:hover {
+  background: var(--surface-2);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--text);
 }
 
-.radio-label{
-  flex: 1;
-  display: flex;
-  justify-content: end;
-  gap: 10px;
+/* ── ALERTS ──────────────────────────────────────── */
+.alert-message {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.alert-success {
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.25);
+  color: #4ade80;
+}
+.alert-error {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171;
 }
 
-@media (max-width: 600px) {
-  .form-row, 
-  .form-row-three {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
+/* ── MOBILE ──────────────────────────────────────── */
+@media (max-width: 700px) {
+  .profile-body { flex-direction: column; gap: 28px; padding: 24px 16px; }
+  .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; position: static; }
+  .form-row { flex-direction: column; gap: 20px; }
+  .birthdate-row { gap: 10px; }
+  .edit-header { padding: 0 16px; }
+  .form-actions { justify-content: stretch; }
+  .submit-button { flex: 1; }
 }
-
-

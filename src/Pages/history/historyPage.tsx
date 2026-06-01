@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback,useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Cookies from 'js-cookie';
 import ReactCountryFlag from "react-country-flag";
 import api from "../../services/api";
-
-
+import { useNavigate } from "react-router-dom";
+import './historyPage.css';
 
 interface Partner {
   _id: string;
@@ -26,23 +26,14 @@ interface MessageSender {
   photo: string;
 }
 
-interface ReplyTo {
-  _id: string;
-  text?: string;
-  sender?: string;
-  imagesFiles?: string[];
-  otherFiles?: string[];
-}
-
 interface ApiMessage {
   _id: string;
   chatId: string;
-  chatModel: string;
   sender: MessageSender;
   text?: string;
   imagesFiles?: string[];
   otherFiles?: string[];
-  replyTo?: ReplyTo;
+  replyTo?: { _id: string; text?: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -52,10 +43,12 @@ interface MessagesApiResponse {
   messages: ApiMessage[];
 }
 
-
-
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
 }
 
 function formatDayLabel(iso: string): string {
@@ -78,15 +71,7 @@ function groupByDay(entries: ChatEntry[]): [string, ChatEntry[]][] {
   return Array.from(map.entries());
 }
 
-const btnStyle: React.CSSProperties = {
-  fontSize: 13,
-  padding: "5px 12px",
-  borderRadius: 8,
-  background: "blue",
-  color: "white"
-};
-
-
+// ─── Chat Modal ───────────────────────────────────────────────────────────────
 interface ChatModalProps {
   entry: ChatEntry;
   currentUserId: string;
@@ -104,215 +89,107 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  
   const fetchPage = useCallback(
     async (pageNum: number, prepend = false) => {
       const { data } = await api.get<MessagesApiResponse>(
         `/api/random-chats/${entry.randomChatId}/messages`,
         { params: { page: pageNum } }
       );
-
-      const fetched = data.messages;
-      // API returns newest-first → reverse to oldest-first for display
-      const sorted = [...fetched].reverse();
-
+      const sorted = [...data.messages].reverse();
       setMessages((prev) => (prepend ? [...sorted, ...prev] : sorted));
-      // If we got fewer results than expected, no more pages
-      setHasMore(fetched.length > 0);
+      setHasMore(data.messages.length > 0);
     },
     [entry.randomChatId]
   );
 
-  // Initial load
   useEffect(() => {
     setLoadingInitial(true);
     fetchPage(1)
-      .catch((err) =>
-        setError(err?.response?.data?.message ?? "Failed to load messages.")
-      )
+      .catch((err) => setError(err?.response?.data?.message ?? "Failed to load messages."))
       .finally(() => setLoadingInitial(false));
   }, [fetchPage]);
 
-  // Scroll to bottom only on first load
   useEffect(() => {
-    if (!loadingInitial) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-    }
+    if (!loadingInitial) messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
   }, [loadingInitial]);
 
   const loadOlder = async () => {
     if (loadingMore || !hasMore) return;
     const container = scrollContainerRef.current;
     const prevScrollHeight = container?.scrollHeight ?? 0;
-
     setLoadingMore(true);
     const nextPage = page + 1;
     setPage(nextPage);
-
     try {
       await fetchPage(nextPage, true);
     } catch (err) {
       setError(err?.response?.data?.message ?? "Failed to load more messages.");
     } finally {
       setLoadingMore(false);
-      if (container) {
-        container.scrollTop = container.scrollHeight - prevScrollHeight;
-      }
+      if (container) container.scrollTop = container.scrollHeight - prevScrollHeight;
     }
   };
 
   const handleOverlayClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.target === e.currentTarget) onClose();
-    },
+    (e: React.MouseEvent<HTMLDivElement>) => { if (e.target === e.currentTarget) onClose(); },
     [onClose]
   );
 
   return (
-    <div
-      onClick={handleOverlayClick}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.45)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-        padding: "1rem",
-      }}
-    >
-      <div
-        style={{
-          background: "#8253848f",
-          borderRadius: 16,
-          width: "100%",
-          maxWidth: 520,
-          maxHeight: "80vh",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        {/* ── Header ── */}
-        <div
-          style={{
-            padding: "1rem 1.25rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                objectFit:'cover'
-              }} src={`${import.meta.env.VITE_SERVER_URL}/${entry.partner.photo}`} alt="" />
-            
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 500 }}>{entry.partner.userName}</div>
-              
-            </div>
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-panel">
+
+        {/* Header */}
+        <div className="modal-header">
+          <img
+            className="modal-avatar"
+            src={`${import.meta.env.VITE_SERVER_URL}/${entry.partner.photo}`}
+            alt=""
+          />
+          <div>
+            <div className="modal-partner-name">{entry.partner.userName}</div>
+            <div className="modal-partner-date">Chatted on {formatDate(entry.dateTalked)}</div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "gray",
-              borderRadius:"50%",
-              fontSize: 10,
-              color: "white",
-              width:20,
-              height:20
-            }}
-          >
-            ✕
-          </button>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
 
-        {/* ── Load older button ── */}
+        {/* Load older */}
         {!loadingInitial && !error && hasMore && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "8px 0",
-              flexShrink: 0,
-              borderBottom: "0.5px solid  #e5e5e5",
-            }}
-          >
-            <button onClick={loadOlder} disabled={loadingMore} style={{ ...btnStyle, fontSize: 12 }}>
-              {loadingMore ? "Loading…" : "↑ Load older messages"}
+          <div className="modal-load-older">
+            <button className="modal-load-btn" onClick={loadOlder} disabled={loadingMore}>
+              <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {loadingMore ? "Loading…" : "Load older messages"}
             </button>
           </div>
         )}
 
-        {/* ── Messages area ── */}
-        <div
-          ref={scrollContainerRef}
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "1rem 1.25rem",
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-          }}
-        >
-          {loadingInitial && (
-            <div style={{ textAlign: "center", color: "#888", fontSize: 13, padding: "2rem 0" }}>
-              Loading…
-            </div>
-          )}
-
-          {error && (
-            <div style={{ textAlign: "center", color: "#c0392b", fontSize: 13, padding: "2rem 0" }}>
-              {error}
-            </div>
-          )}
-
+        {/* Messages */}
+        <div className="modal-messages" ref={scrollContainerRef}>
+          {loadingInitial && <div className="msg-loading">Loading…</div>}
+          {error && <div className="msg-error">{error}</div>}
           {!loadingInitial && !error && messages.length === 0 && (
-            <div style={{ textAlign: "center", color: "#888", fontSize: 13, padding: "2rem 0" }}>
-              No messages in this chat.
-            </div>
+            <div className="msg-empty">No messages in this chat.</div>
           )}
 
-          { messages.map((msg) => {
+          {messages.map((msg) => {
             const isMe = msg.sender._id === currentUserId;
-
             return (
-              <div
-                key={msg._id}
-                style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}
-              >
-                
-
-                {/* Bubble */}
-                <div
-                  style={{
-                    maxWidth: "78%",
-                    padding: "8px 12px",
-                    borderRadius:12,
-                    background: isMe
-                      ? "rgb(41, 41, 41)"
-                      : "var(--mainPurple)",
-                    color: "white",
-                    fontSize: 15,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  
-
-                  {msg.text && <div>{msg.text}</div>}
-
-
-                </div>
+              <div key={msg._id} className={`msg-row ${isMe ? 'mine' : 'theirs'}`}>
+                <div className="msg-bubble">{msg.text}</div>
+                <span className="msg-time">{formatTime(msg.createdAt)}</span>
               </div>
             );
           })}
 
           <div ref={messagesEndRef} />
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer">
+          <span className="modal-footer-note">You are viewing a permanent record of this conversation.</span>
+          <button className="modal-report-btn">Report issue</button>
         </div>
       </div>
     </div>
@@ -320,77 +197,114 @@ function ChatModal({ entry, currentUserId, onClose }: ChatModalProps) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-
-
-
-export default function ChatHistory(  ) {
-const currentUserId = Cookies.get('userId');
-  const [history,setHistory]=useState([])
-  useEffect(()=>{api.get('/api/random-chats/history')
-  .then(res =>{ setHistory(res.data) ; console.log(res.data)})
-  .catch(error => console.error('Fetch error:', error))},[])
-
-
+export default function ChatHistory() {
+  const currentUserId = Cookies.get('userId');
+  const navigate = useNavigate();
+  const [history, setHistory] = useState<ChatEntry[]>([]);
+  const [search, setSearch] = useState("");
   const [activeEntry, setActiveEntry] = useState<ChatEntry | null>(null);
-  const groups = groupByDay(history);
+
+  useEffect(() => {
+    api.get('/api/random-chats/history')
+      .then(res => setHistory(res.data))
+      .catch(err => console.error('Fetch error:', err));
+  }, []);
+
+  const filtered = history.filter(e =>
+    e.partner.userName.toLowerCase().includes(search.toLowerCase())
+  );
+  const groups = groupByDay(filtered);
 
   return (
-    <div style={{ padding: "1.5rem", display:'flex',gap:"2rem",alignItems:'center',width:'100%',minHeight:'100vh',flexDirection:'column',backgroundColor:'var(--mainPurple)'}}>
-      <img src="/bg2.jpg" alt="" className="background"  style={{zIndex:0}}/>
-      <div className="overlay" style={{zIndex:0}} />
-      <span style={{zIndex:1, alignSelf:'start',fontSize:18,fontFamily:'Times New Roman'}}>Your History of random chat and video Calls</span>
-      {groups.map(([dateKey, entries]) => (
-        <div key={dateKey} style={{ width:"100%" ,maxWidth:'900px', zIndex:1 }}>
-          <div style={{width:'100%',display:'flex',alignItems:'center', gap:'1rem', marginBottom:'1rem'}}>
-            <div
-            style={{
-              fontSize: 15,
-              fontWeight: 500,
-              color:  "white"
-            }}
-          >
-            {formatDayLabel(entries[0].dateTalked)}
-          </div>
-          <div style={{flex:1,height:1,backgroundColor:'white'}}></div>
-          </div>
-          
+    <div className="history-page">
 
-          {entries.map((entry) => (
-            <div
-              key={entry.randomChatId}
-              style={{
-                borderRadius: 12,
-                padding: "0.875rem 1rem",
-                marginBottom: "0.5rem",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <img style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                objectFit:'cover'
-              }} src={`${import.meta.env.VITE_SERVER_URL}/${entry.partner.photo}`} alt="" />
+      {/* Header */}
+      <header className="history-header">
+        <button className="history-back-btn" onClick={() => navigate(-1)}>
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Back
+        </button>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "white" }}>
-                  {entry.partner.userName}
-                </div>
-                <div style={{ fontSize: 12, color: " #888", marginTop: 2, display: "flex", gap: 8, alignItems: "center" }}>
-                  <span>{formatTime(entry.dateTalked)}</span>
-                  <ReactCountryFlag countryCode={entry.partner.country} className="flag" svg  />
-                </div>
-              </div>
+        <span className="history-header-title">Chat History</span>
 
-              <button onClick={() => setActiveEntry(entry)} style={btnStyle}>
-                View chat log
-              </button>
-            </div>
-          ))}
+        <div className="history-header-search">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+            <path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <input
+            placeholder="Search by name..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
-      ))}
+      </header>
+
+      {/* Body */}
+      <main className="history-body">
+        {groups.length === 0 && (
+          <div className="history-empty">
+            <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
+              <path d="M8 10h8M8 14h4M12 3C7.03 3 3 7.03 3 12c0 1.74.5 3.37 1.36 4.74L3 21l4.26-1.36A9 9 0 1 0 12 3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <h3>No chat history yet</h3>
+            <p>Your random chat sessions will appear here.</p>
+          </div>
+        )}
+
+        {groups.map(([dateKey, entries], gi) => (
+          <div key={dateKey} className="day-group" style={{ animationDelay: `${gi * 0.05}s` }}>
+            <div className="day-label-row">
+              <span className="day-label">{formatDayLabel(entries[0].dateTalked)}</span>
+              <div className="day-line" />
+            </div>
+
+            {entries.map((entry, ei) => (
+              <div
+                key={entry.randomChatId}
+                className="history-entry"
+                style={{ animationDelay: `${gi * 0.05 + ei * 0.04}s` }}
+              >
+                <img
+                  className="history-avatar"
+                  src={`${import.meta.env.VITE_SERVER_URL}/${entry.partner.photo}`}
+                  alt=""
+                />
+
+                <div className="history-entry-info">
+                  <div className="history-entry-name">
+                    {entry.partner.userName}
+                    <span className="new-connection-badge">New Connection</span>
+                  </div>
+                  <div className="history-entry-meta">
+                    <svg viewBox="0 0 24 24" fill="none" width="11" height="11">
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <span>{formatTime(entry.dateTalked)}</span>
+                    <span className="dot">•</span>
+                    <span>Duration: —</span>
+                    {entry.partner.country && (
+                      <>
+                        <span className="dot">•</span>
+                        <ReactCountryFlag countryCode={entry.partner.country} svg className="flag" />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <button className="history-view-btn" onClick={() => setActiveEntry(entry)}>
+                  <svg viewBox="0 0 24 24" fill="none" width="13" height="13">
+                    <path d="M8 10h8M8 14h4M12 3C7.03 3 3 7.03 3 12c0 1.74.5 3.37 1.36 4.74L3 21l4.26-1.36A9 9 0 1 0 12 3z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  View chat log
+                </button>
+              </div>
+            ))}
+          </div>
+        ))}
+      </main>
 
       {activeEntry && (
         <ChatModal

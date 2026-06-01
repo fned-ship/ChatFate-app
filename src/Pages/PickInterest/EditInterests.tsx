@@ -2,126 +2,168 @@ import { useEffect, useState } from 'react'
 import './editinterestsstyle.css'
 import Cookies from 'js-cookie';
 import api from '../../services/api';
-const EditInterests =()=>{
-    const [interests,setInterests]=useState([]) ;
-    const [loading,setLoading]=useState(true)
-    useEffect(()=>{fetch(import.meta.env.VITE_SERVER_URL+"/api/interests").then(response => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
+import { HiMoon } from "react-icons/hi";
+
+const EditInterests = () => {
+  const [interests, setInterests] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_SERVER_URL + "/api/interests")
+      .then(r => { if (!r.ok) throw new Error('Network response was not ok'); return r.json(); })
+      .then(data => { setInterests(data); setLoading(false); })
+      .catch(err => { console.error('Fetch error:', err); setLoading(false); });
+  }, []);
+
+  const [picked, setPicked] = useState<string[]>(() => {
+    try {
+      const userCookie = Cookies.get('user');
+      if (userCookie) return JSON.parse(userCookie).interests.map((i: any) => i._id);
+    } catch (e) { console.error("Failed to parse user cookie", e); }
+    return [];
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const MAX = 15;
+  const MIN = 3;
+
+  const toggleInterest = (id: string, e: React.MouseEvent) => {
+    if (picked.includes(id)) {
+      setPicked(prev => prev.filter(p => p !== id));
+    } else if (picked.length < MAX) {
+      setPicked(prev => [...prev, id]);
+    } else {
+      const target = e.currentTarget as HTMLElement;
+      target.classList.add('shake');
+      setTimeout(() => target.classList.remove('shake'), 500);
     }
-    return response.json(); // Parses the body as JSON
-  })
-  .then(data =>{ setInterests(data) ; console.log(data);setLoading(false)})
-  .catch(error => {console.error('Fetch error:', error);setLoading(false)})},[])
-    
+  };
 
+  const countInCategory = (cat: string) =>
+    (interests[cat] ?? []).filter(i => picked.includes(i.id)).length;
 
-    
+  const progressPct = Math.min((picked.length / MAX) * 100, 100);
+  const isReady = picked.length >= MIN;
 
-const colors:Record<string,string>={
-  'Gaming':'purple',
-  'Technology':'blue',
-  'Outdoors':'#184000',
-  'Music':'#a73e0e',
-  'Arts':'#5a2913',
-  'Entertainment':'#1c5123',
-  'Crafts':'#511c32',
-  'Design':'#56554e',
-  'Fashion':'rgb(33 77 83)',
-  'Finance':'rgb(79 81 92)',
-  'Lifestyle':'rgb(160 112 87)',
-  'Literature':'#5f3620',
-  'Media':'rgb(17 27 58)',
-  'Wellness':'rgb(87 160 133)',
-  'Sports':'rgb(17 55 31)',
-  'Science':'rgb(19 27 53)',
-  'Hobbies':'red',
-  'Social':'#ff8e3f',
-  'Fitness':'#2d4128',
-  'Education':'green'
+  return (
+    <div className="interestPage">
 
-}
-const [picked, setPicked] = useState<string[]>(() => {
-  try {
-    const userCookie = Cookies.get('user');
-    // Check if cookie exists to avoid parsing errors
-    if (userCookie) {
-      return JSON.parse(userCookie).interests.map((i: any) => i._id);
-    }
-  } catch (error) {
-    console.error("Failed to parse user cookie", error);
-  }
-  return []; // Return default empty array if error or no cookie
-}); 
+      {/* ── Navbar ── */}
+      <nav className="ei-navbar">
+        <span className="brand"><HiMoon style={{color:"#a855f7"}} />hatFate</span>
+        <div className="ei-nav-right">
+          <span className={`ei-counter-badge${picked.length >= MAX ? ' warn' : ''}`}>
+            {picked.length} / {MAX} selected
+          </span>
+        </div>
+      </nav>
 
- const [isLoading, setIsLoading] = useState(false);
-   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+      {/* ── Hero ── */}
+      <div className="ei-hero">
+        <h1>Pick Your <span>Interests</span></h1>
+        <p>Select at least {MIN} interests to help us find you better matches. You can pick up to {MAX}.</p>
+      </div>
 
-  return <div className="interestPage">
-    <div className='heading1'>
-    <span> Pick Your Interests </span>
-    <span> (Minimum: 3, Maximum: 15)</span>
-    
-    </div>
-    {loading && <span style={{textAlign:'center',color:'gray',fontSize:12,fontFamily:'Ultra'}}>Loading data...</span>}
-    {Object.keys(interests).map((c)=>(
-      <div className="cat" style={{background:"linear-gradient(transparent,"+colors[c ]+" 90%),url(\"/"+c+".jpg\")",backgroundPosition:'center center',backgroundRepeat:'no-repeat',backgroundSize:'cover'}}>
-      {c}
-      <div style={{display:'flex',flexWrap:'wrap',gap:'10px'}}>
-        {
-        interests[c].map((i)=>(<div className="intr" 
-            style={{backgroundColor: picked.includes(i.id)?'green':'gray',border:picked.includes(i.id)?'1px solid white':'1px solid gray'}} 
-            onClick={(e)=>{ 
-                if (picked.includes(i.id)){
-                    setPicked(prev => prev.filter((index) => index != i.id))
-                }
-                else if (picked.length<15){
-setPicked([...picked,i.id]);console.log([...picked,i.id])
-            }else{
-               const target = e.target as HTMLElement;
-  target.classList.add('shake');
-  setTimeout(() => {
-  target.classList.remove('shake');
-}, 1000);
+      {/* ── Progress bar ── */}
+      <div className="ei-progress-wrap">
+        <div className="ei-progress-track">
+          <div className="ei-progress-fill" style={{ width: `${progressPct}%` }} />
+        </div>
+      </div>
+
+      {/* ── Loading ── */}
+      {loading && (
+        <div className="ei-loading">
+          <div className="ei-loading-spinner" />
+          Loading interests…
+        </div>
+      )}
+
+      {/* ── Category cards ── */}
+      {!loading && (
+        <div className="ei-categories">
+          {Object.keys(interests).map(cat => {
+            const selCount = countInCategory(cat);
+            return (
+              <div className="cat" key={cat}>
+                {/* Card header with background image */}
+                <div className="cat-header">
+                  <div
+                    className="cat-bg"
+                    style={{ backgroundImage: `url("/${cat}.jpg")` }}
+                  />
+                  <div className="cat-overlay" />
+                  <span className="cat-name">{cat}</span>
+                  {selCount > 0 && (
+                    <span className="cat-selected-count">{selCount} picked</span>
+                  )}
+                </div>
+
+                {/* Interest chips */}
+                <div className="cat-body">
+                  {interests[cat].map(i => (
+                    <div
+                      key={i.id}
+                      className={`intr${picked.includes(i.id) ? ' selected' : ''}`}
+                      onClick={e => toggleInterest(i.id, e)}
+                    >
+                      {i.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Sticky footer bar ── */}
+      <div className="ei-footer-bar">
+        <p className="ei-footer-hint">
+          {picked.length < MIN
+            ? <>Pick <strong>{MIN - picked.length} more</strong> to continue</>
+            : <>You've picked <strong>{picked.length}</strong> interest{picked.length !== 1 ? 's' : ''} — looking good!</>
+          }
+        </p>
+        <button
+          className="submit-button"
+          disabled={isLoading || !isReady}
+          onClick={async () => {
+            if (picked.length < MIN) {
+              setMessage({ type: 'error', text: `Minimum of ${MIN} interests need to be picked.` });
+              return;
             }
-                }}>{i.name}</div>))
-        
-    }</div>
-    </div>
-      
+            setIsLoading(true);
+            try {
+              await api.put('/api/profile/interests', { interests: picked });
+              setMessage({ type: 'success', text: 'Interests saved successfully!' });
+              Cookies.set('user', JSON.stringify({ ...JSON.parse(Cookies.get('user') ?? '{}'), interests: picked }), { expires: 7 });
+            } catch (err) {
+              console.error(err);
+              setMessage({ type: 'error', text: 'Failed to save. Please try again.' });
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+        >
+          {isLoading ? 'Saving…' : '✦ Save Changes'}
+        </button>
+      </div>
 
-    ))}
-
-    <button className='submit-button' style={{alignSelf:'center',margin:'10px'}} disabled={isLoading}
-    onClick={async ()=>{
-
-        if(picked.length<3){
-            setMessage({ type: 'error', text: 'Minimum of 3 interests need to be picked.' });
-        }else{
-            setIsLoading(true)
-            try{
-                await api.put('/api/profile/interests',{interests:picked});
-                setMessage({ type: 'success', text: 'Profile updated successfully!' });
-                Cookies.set('user',   JSON.stringify({...JSON.parse(Cookies.get('user')),interests:picked}),{ expires: 7 });
-            } catch (error) {
-      console.error(error);
-      setMessage({ type: 'error', text: 'Failed to update interests. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
-            
-        }
-
-    }}
-    
-    >{isLoading ? 'Saving...' : 'Save Changes'}</button>
-    
-    {message && (
-        <div className={`alert-message ${message.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+      {/* ── Alert toast ── */}
+      {message && (
+        <div
+          className={`alert-message ${message.type === 'success' ? 'alert-success' : 'alert-error'}`}
+          onClick={() => setMessage(null)}
+        >
           {message.text}
         </div>
       )}
-  </div>
 
-}
-export default EditInterests
+    </div>
+  );
+};
+
+export default EditInterests;

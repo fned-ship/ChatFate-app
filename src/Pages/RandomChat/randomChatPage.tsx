@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import io, { Socket } from "socket.io-client";
-import './style2.css';
+import './randomChatPage.css';
 import ChatBoxComp from "../../Components/chatBox";
 import Cookies from 'js-cookie';
 import ReactCountryFlag from 'react-country-flag';
-
-
+import { HiMoon } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
 
 
 type PartnerStatus = 'searching' | 'connecting' | 'connected' | 'left';
@@ -130,6 +130,8 @@ const socketRef = useRef<Socket | null>(null);
   const [partnerData,    setPartnerData]    = useState<any>(null);
   const [matchPayload,   setMatchPayload]   = useState<any>(null);
   const [friendRequestStatus,setFriendRequestStatus] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const iAmInitiatorRef  = useRef(false);
   const matchActiveRef   = useRef(false);
@@ -137,6 +139,8 @@ const socketRef = useRef<Socket | null>(null);
   const pendingCallToRef = useRef<string | null>(null);
   // Incremented on every cleanup so stale async callbacks can detect they're outdated
   const sessionIdRef     = useRef(0);
+
+  const navigate = useNavigate();
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -212,6 +216,16 @@ const socketRef = useRef<Socket | null>(null);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    elapsedRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => { if (elapsedRef.current) clearInterval(elapsedRef.current); };
+  }, []);
+
+  const fmtTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  };
 
   // ── Matchmaking trigger ───────────────────────────────────────────────────
   const triggerSearch = () => {
@@ -256,207 +270,380 @@ const socketRef = useRef<Socket | null>(null);
       .catch(err => console.error('[Friend request] Error:', err));
   };
 
-  return (
-    <main className="randomchatpage">
-      <span className="brand">hatFate</span>
-      <img src="/bg2.jpg" alt="" className="background" />
-      <div className="overlay" />
+  const isSearching = partnerStatus !== 'connected';
 
-      <div className="common">
-        <h2 className="title">Common Interests:</h2>
-        {matchPayload?.commonInterests?.map((int: string, index: number) => (
-          <div key={int} className="interest" style={{ backgroundColor: colors[index] }}>{int}</div>
-        ))}
+  return (
+    <main className="rcp-page">
+
+      {/* ── Navbar ── */}
+      <nav className="rcp-navbar">
+        <span className="brand"><HiMoon style={{color:"#a855f7"}} />hatFate</span>
+        <div className="rcp-nav-actions">
+          <button className="history-back-btn" onClick={() => navigate(-1)}>
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Back
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Hero ── */}
+      <div className="rcp-hero">
+        <div className="rcp-pref-pill">
+          <span className="rcp-pref-dot" />
+          Matching Preference: Worldwide
+          <span style={{ opacity: 0.4, marginLeft: 2 }}>ⓘ</span>
+        </div>
+        <h1>Destiny is calling…</h1>
+        <p className="rcp-timer">Time elapsed: {fmtTime(elapsed)}</p>
       </div>
-      <div className="rest" style={{padding:'min(2%,10px)',gap:'10px'}} >
-        <div className='boxHolder'>
-              { partnerData && 
-            <div className="box" >
-              <span>Randomly Chatting With:</span>
-                <img src={`${import.meta.env.VITE_SERVER_URL}/${partnerData.photo}`} />
-                <div className="details" >
-                    <p>{partnerData.userName}</p>
-                    <span>From</span>
-                    {partnerData && <ReactCountryFlag countryCode={partnerData.country} svg style={{ width: '2em', height: '2em' }} />}
+
+      {/* ── Common interests ── */}
+      {matchPayload?.commonInterests?.length > 0 && (
+        <div className="rcp-common">
+          <span className="rcp-common-label">Common interests:</span>
+          {matchPayload.commonInterests.map((int: string, i: number) => (
+            <span
+              key={int}
+              className="rcp-common-tag"
+              style={{ borderColor: colors[i] + '55', color: colors[i] }}
+            >
+              {int}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* ── Body ── */}
+      <div className="rcp-body">
+
+        {/* ── Left sidebar ── */}
+        <div className="rcp-sidebar">
+
+          {/* Partner info / searching state */}
+          {partnerData && partnerStatus === 'connected' ? (
+            <div className="rcp-partner-card">
+              <img
+                className="rcp-partner-avatar"
+                src={`${import.meta.env.VITE_SERVER_URL}/${partnerData.photo}`}
+                alt={partnerData.userName}
+                onError={(e) => { (e.target as HTMLImageElement).src = '/unknown.jpg'; }}
+              />
+              <div className="rcp-partner-info">
+                <div className="rcp-partner-name">{partnerData.firstName ?? partnerData.userName}</div>
+                <div className="rcp-partner-country">
+                  <ReactCountryFlag countryCode={partnerData.country} svg style={{ width: '14px', height: '14px', borderRadius: '50%' }} />
+                  {partnerData.country}
                 </div>
-            </div> }
-              <div className="chatbuttons">
-            <button className="btn skip"   onClick={handleSkip}>Skip</button>
-            <button className={`btn friend ${friendRequestStatus?'sent':'not-sent'}`} onClick={addFriend} >{friendRequestStatus?'Request Sent':'Add Friend'}</button>
-            <button className="btn report" disabled={!partnerData} onClick={()=>setIsReportModalOpen(true)} >!</button>
-          </div>
+                <div className="rcp-status-badge" style={{ marginTop: 6 }}>
+                  <span className="rcp-status-dot" />
+                  Chatting now
+                </div>
+              </div>
             </div>
-        <div style={{display:'flex',flex:2,position:'relative'}}>
-          {randomChatData && (
-                <ChatBoxComp
+          ) : (
+            <div className="rcp-searching-card">
+              <div className="rcp-searching-icon">
+                <span className="rcp-searching-star">✦</span>
+              </div>
+              <div>
+                <h3>
+                  {partnerStatus === 'left'
+                    ? 'Partner left'
+                    : 'Finding you a partner…'}
+                </h3>
+                <p>
+                  {partnerStatus === 'left'
+                    ? 'Hit Skip to find someone new.'
+                    : 'This usually takes a few seconds.'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="rcp-actions">
+            <button className="rcp-btn rcp-btn-skip" onClick={handleSkip}>
+              ↺ Skip Match
+            </button>
+            <button
+              className={`rcp-btn rcp-btn-friend${friendRequestStatus ? ' sent' : ''}`}
+              disabled={!partnerData}
+              onClick={addFriend}
+            >
+              {friendRequestStatus ? '✓ Request Sent' : '＋ Add Friend'}
+            </button>
+            <button
+              className="rcp-btn rcp-btn-report"
+              disabled={!partnerData}
+              onClick={() => setIsReportModalOpen(true)}
+            >
+              ⚑ Report
+            </button>
+          </div>
+
+        </div>
+
+        {/* ── Chat area ── */}
+        <div className="rcp-chat-area">
+          <div className="rcp-chat-box">
+            {randomChatData && (
+              <ChatBoxComp
                 type="random"
                 socket={socketRef.current}
                 currentUserId={currentUserId}
                 partnerData={partnerData}
                 chatId={randomChatData._id}
-                />
+              />
             )}
-            <PartnerOverlay status={partnerStatus} />
-        </div>
-        
-        
-            
-      </div>
-{isReportModalOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)'
-        }}>
-          <div style={{
-            background: '#151520', padding: '24px', borderRadius: '12px',
-            width: '90%', maxWidth: '400px', color: '#fff',
-            display: 'flex', flexDirection: 'column', gap: '16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)', border: '1px solid #2a2a3a',
-            maxHeight: '90vh', overflowY: 'auto' // Added scroll for smaller screens
-          }}>
-            <h3 style={{ margin: 0, color: '#ff4d4f', fontSize: '20px' }}>Report User</h3>
-            
-            {reportStatus === 'success' ? (
-              <p style={{ color: '#4BB543', margin: 0 }}>Report submitted successfully. Thank you.</p>
-            ) : (
-              <>
-                <p style={{ margin: 0, color: '#aaa', fontSize: '14px' }}>
-                  Please describe the inappropriate behavior. Your report will be reviewed by our team.
-                </p>
-                
-                <textarea 
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  placeholder="Reason for reporting..."
-                  style={{
-                    width: '100%', minHeight: '100px', padding: '12px',
-                    borderRadius: '8px', background: '#0a0a10', color: '#fff',
-                    border: '1px solid #333', resize: 'vertical', outline: 'none'
-                  }}
-                />
+          </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-  <label style={{ color: '#aaa', fontSize: '14px' }}>Importance Level:</label>
-  <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-    {[1, 2, 3, 4, 5].map((num) => {
-      const isSelected = importance === num;
-      const severityColors = ['#066000', '#5e9d16', '#dac400', '#ffa726', '#f81a1d'];
-
-      return (
-        <button
-          key={num}
-          type="button"
-          onClick={() => setImportance(num)}
-          style={{
-            height:30,
-            aspectRatio:'1/1',
-            borderRadius: '50vh',
-            border: '1px solid',
-            borderColor: isSelected ? 'white' : 'transparent',
-            background: severityColors[num-1],
-            color: isSelected ? 'white' : '#dfdfdf',
-            fontSize: '14px',
-            fontWeight: isSelected ? '700' : '400',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          {num}
-        </button>
-      );
-    })}
-  </div>
-</div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                  <div style={{position:'relative', padding:'8px',display:"flex",alignItems:'center',gap:8,backgroundColor:'darkblue',borderRadius:8,width:'fit-content'}}>
-                    <label style={{ color: 'white', fontSize: '14px', fontWeight:'300' }}>Attach Evidence:</label>
-                  <img height={16} width={16} src="/camIcon.png"/>
-                  <input
-                    type="file" 
-                    multiple 
-                    accept="image/*"
-                    onChange={(e)=>{setSelectedFiles(prev => [...prev, ...Array.from(e.target.files)]);}}
-                    style={{
-                      position:'absolute',
-                      top:0,left:0,width:'100%',height:'100%',zIndex:0,
-                      color: 'transparent',
-                      background: 'transparent',
-                      cursor: 'pointer'
-                    }}
-                  />
-
+          {/* Overlay when not connected */}
+          {isSearching && (
+            <div className="rcp-chat-overlay">
+              {partnerStatus === 'left' ? (
+                <>
+                  <span className="rcp-overlay-emoji">👋</span>
+                  <h2>Partner left the chat</h2>
+                  <p>Hit <strong>Skip Match</strong> to find someone new.</p>
+                </>
+              ) : (
+                <>
+                  <div className="rcp-searching-icon" style={{ width: 56, height: 56 }}>
+                    <span className="rcp-searching-star">✦</span>
                   </div>
-                  
-                  
-                  {selectedFiles.length > 0 && (
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
-                      {selectedFiles.map((file, index) => (
-                        <div key={`${file.name}-${index}`} style={{ position: 'relative', width: '64px', height: '64px' }}>
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            style={{ 
-                              width: '100%', height: '100%', objectFit: 'cover', 
-                              borderRadius: '8px', border: '1px solid #333' 
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>     setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
-                            style={{
-                              position: 'absolute', top: '-6px', right: '-6px',
-                              background: '#ff4d4f', color: '#fff', border: 'none',
-                              borderRadius: '50%', width: '20px', height: '20px',
-                              fontSize: '12px', cursor: 'pointer', display: 'flex',
-                              alignItems: 'center', justifyContent: 'center', padding: 0,
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
+                  <h2>Finding you a partner…</h2>
+                  <p>Connecting to the global network. This usually takes a few seconds.</p>
+                  {matchPayload?.commonInterests?.length > 0 && (
+                    <div className="rcp-overlay-tags">
+                      {matchPayload.commonInterests.map((int: string) => (
+                        <span key={int} className="rcp-overlay-tag">{int}</span>
                       ))}
                     </div>
                   )}
-                </div>
-                
-                {reportStatus === 'error' && (
-                  <p style={{ color: '#ff4d4f', margin: 0, fontSize: '13px' }}>Failed to submit. Please try again.</p>
-                )}
-                
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                  <button 
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* ── Footer ── */}
+      <footer className="rcp-footer">
+        <span>© 2024 ChatFate. Connect with destiny.</span>
+        <div className="rcp-footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Safety</a>
+          <a href="#">Help Center</a>
+        </div>
+      </footer>
+
+      {/* [] */}
+      {/* ── Report modal ── */}
+{isReportModalOpen && (
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 9999,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)'
+  }}>
+    <div style={{
+      background: '#0d0d14',
+      padding: '28px 24px',
+      borderRadius: '14px',
+      width: '90%',
+      maxWidth: '400px',
+      color: '#fff',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
+      border: '1px solid #1e1e2e',
+      maxHeight: '90vh',
+      overflowY: 'auto'
+    }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ fontSize: '20px', color: '#e74c3c' }}>🚩</span>
+        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600, letterSpacing: '0.01em' }}>
+          Report user
+        </h3>
+      </div>
+
+      {reportStatus === 'success' ? (
+        <>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            background: '#0a1f12', border: '1px solid #1a4a28',
+            borderRadius: '10px', padding: '14px 16px',
+            color: '#4caf81', fontSize: '14px'
+          }}>
+            ✓ Report submitted. Thank you for helping keep the platform safe.
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={resetModal}
+              style={{
+                padding: '9px 18px', borderRadius: '8px',
+                border: '1px solid #1e1e2e', background: '#10102a',
+                color: '#8888bb', fontSize: '13px', fontWeight: 500, cursor: 'pointer'
+              }}
+            >Close</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p style={{ margin: 0, color: '#6b6b8a', fontSize: '13px', lineHeight: 1.6 }}>
+            Describe the inappropriate behavior. Your report will be reviewed by our team.
+          </p>
+
+          <hr style={{ height: '1px', background: '#1e1e2e', border: 'none', margin: 0 }} />
+
+          {/* Reason textarea */}
+          <textarea
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            placeholder="Reason for reporting…"
+            style={{
+              width: '100%', minHeight: '96px', padding: '12px 14px',
+              borderRadius: '10px', background: '#07070f', color: '#d0d0e0',
+              border: '1px solid #1e1e2e', resize: 'vertical', outline: 'none',
+              fontSize: '13px', fontFamily: 'inherit', lineHeight: 1.6
+            }}
+          />
+
+          {/* Severity */}
+          <div>
+            <p style={{
+              fontSize: '12px', fontWeight: 500, color: '#6b6b8a',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px'
+            }}>
+              Severity level
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              {[1, 2, 3, 4, 5].map((num) => {
+                const isSelected = importance === num;
+                const severityColors = ['#1a5c1a', '#3d6e12', '#7a6200', '#8a4a00', '#8a1212'];
+                return (
+                  <button
+                    key={num}
                     type="button"
-                    onClick={resetModal}
+                    onClick={() => setImportance(num)}
                     style={{
-                      padding: '8px 16px', borderRadius: '6px', border: 'none',
-                      background: '#333', color: '#fff', cursor: 'pointer', fontWeight: 600
+                      width: '36px', height: '36px', borderRadius: '50%',
+                      border: `1.5px solid ${isSelected ? '#fff' : 'transparent'}`,
+                      background: severityColors[num - 1],
+                      color: '#fff',
+                      fontSize: '13px', fontWeight: isSelected ? 700 : 500,
+                      cursor: 'pointer', transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 0 0 2px rgba(255,255,255,0.12)' : 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}
-                    disabled={reportStatus === 'submitting'}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    onClick={submitReportManually}
-                    style={{
-                      padding: '8px 16px', borderRadius: '6px', border: 'none',
-                      background: '#ff4d4f', color: '#fff', fontWeight: 600,
-                      cursor: reportReason.trim() ? 'pointer' : 'not-allowed',
-                      opacity: (reportStatus === 'submitting' || !reportReason.trim()) ? 0.6 : 1
-                    }}
-                    disabled={reportStatus === 'submitting' || !reportReason.trim()}
-                  >
-                    {reportStatus === 'submitting' ? 'Submitting...' : 'Submit'}
-                  </button>
-                </div>
-              </>
+                  >{num}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Attach evidence */}
+          <div>
+            <p style={{
+              fontSize: '12px', fontWeight: 500, color: '#6b6b8a',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px'
+            }}>
+              Attach evidence
+            </p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px', background: '#10102a',
+              border: '1px solid #1e1e2e', borderRadius: '8px',
+              color: '#8888bb', fontSize: '13px', cursor: 'pointer',
+              position: 'relative', overflow: 'hidden'
+            }}>
+              📷 Upload screenshots
+              <input
+                type="file" multiple accept="image/*"
+                onChange={(e) => setSelectedFiles(prev => [...prev, ...Array.from(e.target.files)])}
+                style={{
+                  position: 'absolute', inset: 0, opacity: 0,
+                  cursor: 'pointer', width: '100%', height: '100%'
+                }}
+              />
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                {selectedFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} style={{ position: 'relative', width: '60px', height: '60px' }}>
+                    <img
+                      src={URL.createObjectURL(file)}
+                      style={{
+                        width: '100%', height: '100%', objectFit: 'cover',
+                        borderRadius: '8px', border: '1px solid #1e1e2e'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
+                      style={{
+                        position: 'absolute', top: '-6px', right: '-6px',
+                        background: '#c0392b', color: '#fff', border: 'none',
+                        borderRadius: '50%', width: '18px', height: '18px',
+                        fontSize: '10px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0
+                      }}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        </div>
-      )}
 
-      
+          {reportStatus === 'error' && (
+            <p style={{ color: '#e74c3c', margin: 0, fontSize: '13px' }}>
+              Failed to submit. Please try again.
+            </p>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '4px' }}>
+            <button
+              type="button"
+              onClick={resetModal}
+              disabled={reportStatus === 'submitting'}
+              style={{
+                padding: '9px 18px', borderRadius: '8px',
+                border: '1px solid #1e1e2e', background: '#10102a',
+                color: '#8888bb', fontSize: '13px', fontWeight: 500, cursor: 'pointer'
+              }}
+            >Cancel</button>
+            <button
+              type="button"
+              onClick={submitReportManually}
+              disabled={reportStatus === 'submitting' || !reportReason.trim()}
+              style={{
+                padding: '9px 20px', borderRadius: '8px', border: 'none',
+                background: '#c0392b', color: '#fff',
+                fontSize: '13px', fontWeight: 600,
+                cursor: (reportStatus === 'submitting' || !reportReason.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (reportStatus === 'submitting' || !reportReason.trim()) ? 0.45 : 1,
+                display: 'flex', alignItems: 'center', gap: '6px',
+                transition: 'background 0.15s, opacity 0.15s'
+              }}
+            >
+              {reportStatus === 'submitting' ? 'Submitting…' : 'Submit report'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+)}
+      {/* [] */}
+
     </main>
   );
 }

@@ -1,0 +1,533 @@
+/* ── ChatFate Random Chat Page ──────────────────────────────── */
+:root {
+  --bg:         #0d0d0d;
+  --surface:    #161616;
+  --surface2:   #1e1e1e;
+  --border:     rgba(255,255,255,0.08);
+  --border2:    rgba(255,255,255,0.12);
+  --text:       #ffffff;
+  --text-muted: rgba(255,255,255,0.45);
+  --text-sub:   rgba(255,255,255,0.65);
+  --gold:       #c9a84c;
+  --gold-light: #e8c96a;
+  --accent:     #7c5cbf;
+  --radius-card: 16px;
+  --radius-pill: 9999px;
+  --font:        'Inter', 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.rcp-page {
+  min-height: 100vh;
+  height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Navbar ─────────────────────────────────────────────────── */
+.rcp-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.rcp-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.rcp-logo-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #7c5cbf, #5a3fa0);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.rcp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rcp-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: background 0.15s, color 0.15s;
+}
+.rcp-nav-btn:hover { background: var(--surface2); color: var(--text); }
+
+.rcp-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.rcp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Hero ───────────────────────────────────────────────────── */
+.rcp-hero {
+  text-align: center;
+  padding: 20px 16px 14px;
+  flex-shrink: 0;
+}
+
+.rcp-pref-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-pill);
+  padding: 5px 14px;
+  font-size: 12.5px;
+  color: var(--text-sub);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.rcp-pref-pill:hover { border-color: rgba(255,255,255,0.25); }
+
+.rcp-pref-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+.rcp-hero h1 {
+  font-size: clamp(18px, 2.5vw, 26px);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
+}
+
+.rcp-timer {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── Common interests bar ───────────────────────────────────── */
+.rcp-common {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 24px 12px;
+  flex-shrink: 0;
+}
+
+.rcp-common-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.rcp-common-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  font-size: 11.5px;
+  color: var(--text-sub);
+}
+
+/* ── Body: sidebar + chat ───────────────────────────────────── */
+.rcp-body {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  padding: 0 24px 16px;
+  min-height: 0;
+}
+
+/* ── Left sidebar ───────────────────────────────────────────── */
+.rcp-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Partner card ───────────────────────────────────────────── */
+.rcp-partner-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-card);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle gold shimmer top edge */
+.rcp-partner-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.5;
+}
+
+.rcp-partner-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border2);
+  background: var(--surface2);
+}
+
+.rcp-partner-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rcp-partner-country {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rcp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.rcp-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: rcp-pulse 2s ease-in-out infinite;
+}
+
+@keyframes rcp-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Searching / connecting / left state card ───────────────── */
+.rcp-searching-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-card);
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.rcp-searching-icon {
+  width: 56px;
+  height: 56px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rcp-searching-icon::before,
+.rcp-searching-icon::after {
+  content: '';
+  position: absolute;
+  border: 1.5px solid var(--gold);
+  border-radius: 4px;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.rcp-searching-icon::before {
+  width: 44px;
+  height: 44px;
+  animation: rcp-spin 2s linear infinite;
+}
+
+.rcp-searching-icon::after {
+  width: 30px;
+  height: 30px;
+  animation: rcp-spin 2s linear infinite reverse;
+  opacity: 0.5;
+}
+
+@keyframes rcp-spin { to { transform: rotate(360deg); } }
+
+.rcp-searching-star {
+  color: var(--gold-light);
+  font-size: 16px;
+  z-index: 1;
+  animation: rcp-star-pulse 2s ease-in-out infinite;
+}
+
+@keyframes rcp-star-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1;   }
+  50%       { transform: scale(1.2); opacity: 0.7; }
+}
+
+.rcp-searching-card h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rcp-searching-card p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Action buttons ─────────────────────────────────────────── */
+.rcp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rcp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  width: 100%;
+}
+
+.rcp-btn:hover  { opacity: 0.85; }
+.rcp-btn:active { transform: scale(0.97); }
+.rcp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.rcp-btn-skip {
+  background: #1b3a2b;
+  color: #4ade80;
+  border: 1px solid rgba(74,222,128,0.25);
+}
+
+.rcp-btn-friend {
+  background: #1a1a2e;
+  color: #a78bfa;
+  border: 1px solid rgba(167,139,250,0.25);
+}
+.rcp-btn-friend.sent {
+  background: #0f1e35;
+  color: #60a5fa;
+  border-color: rgba(96,165,250,0.25);
+}
+
+.rcp-btn-report {
+  background: #2a1010;
+  color: #f87171;
+  border: 1px solid rgba(248,113,113,0.25);
+}
+
+/* ── Chat area ──────────────────────────────────────────────── */
+.rcp-chat-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.rcp-chat-box {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Status overlay (searching / left) over chat area ───────── */
+.rcp-chat-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(13,13,13,0.88);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border2);
+  z-index: 10;
+  text-align: center;
+  padding: 32px;
+}
+
+.rcp-chat-overlay h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.rcp-chat-overlay p {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 280px;
+  line-height: 1.6;
+}
+
+.rcp-overlay-spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--gold);
+  animation: rcp-spin 0.9s linear infinite;
+}
+
+.rcp-overlay-emoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.rcp-overlay-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.rcp-overlay-tag {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.rcp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.rcp-footer-links {
+  display: flex;
+  gap: 16px;
+}
+
+.rcp-footer-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.rcp-footer-links a:hover { color: var(--text-sub); }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 680px) {
+  .rcp-body {
+    flex-direction: column;
+    padding: 0 12px 12px;
+  }
+
+  .rcp-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rcp-partner-card {
+    flex: 1;
+    flex-direction: row;
+    text-align: left;
+    padding: 12px 14px;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .rcp-partner-card::before { display: none; }
+
+  .rcp-partner-avatar {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .rcp-partner-info { flex: 1; min-width: 0; }
+
+  .rcp-searching-card {
+    flex: 1;
+    flex-direction: row;
+    padding: 12px 14px;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .rcp-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .rcp-footer { display: none; }
+}
