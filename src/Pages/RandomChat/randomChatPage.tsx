@@ -10,40 +10,40 @@ import { useNavigate } from "react-router-dom";
 
 type PartnerStatus = 'searching' | 'connecting' | 'connected' | 'left';
 
-const OVERLAY_CONFIG: Record<
-  Exclude<PartnerStatus, 'connected'>,
-  { icon: string; line1: string; line2: string; accent: string; spin: boolean }
-> = {
-  searching:  { icon: '🔍', line1: 'Finding you a partner…',  line2: 'This usually takes a few seconds', accent: '#6c63ff', spin: true  },
-  connecting: { icon: '⚡', line1: 'Partner found!',           line2: 'Establishing connection…',         accent: '#f0a500', spin: true  },
-  left:       { icon: '👋', line1: 'Partner left the chat',    line2: 'Hit Skip to find someone new',     accent: '#e05252', spin: false },
-};
+// const OVERLAY_CONFIG: Record<
+//   Exclude<PartnerStatus, 'connected'>,
+//   { icon: string; line1: string; line2: string; accent: string; spin: boolean }
+// > = {
+//   searching:  { icon: '🔍', line1: 'Finding you a partner…',  line2: 'This usually takes a few seconds', accent: '#6c63ff', spin: true  },
+//   connecting: { icon: '⚡', line1: 'Partner found!',           line2: 'Establishing connection…',         accent: '#f0a500', spin: true  },
+//   left:       { icon: '👋', line1: 'Partner left the chat',    line2: 'Hit Skip to find someone new',     accent: '#e05252', spin: false },
+// };
 
-function PartnerOverlay({ status }: { status: PartnerStatus }) {
-  if (status === 'connected') return null;
-  const cfg = OVERLAY_CONFIG[status];
-  return (
-    <div style={{
-      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 12,
-      background: 'rgba(8,8,18,0.85)', backdropFilter: 'blur(8px)',
-      borderRadius: 'inherit', zIndex: 10,
-    }}>
-      {cfg.spin && (
-        <div style={{
-          width: 52, height: 52, borderRadius: '50%',
-          borderWidth: 3, borderStyle: 'solid',
-          borderColor: `transparent transparent transparent ${cfg.accent}`,
-          animation: 'spin 0.9s linear infinite',
-        }} />
-      )}
-      <span style={{ fontSize: cfg.spin ? 26 : 44, lineHeight: 1 }}>{cfg.icon}</span>
-      <p style={{ color: '#fff', fontWeight: 600, fontSize: 15, margin: 0, textAlign: 'center', padding: '0 16px' }}>{cfg.line1}</p>
-      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0, textAlign: 'center', padding: '0 16px' }}>{cfg.line2}</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-}
+// function PartnerOverlay({ status }: { status: PartnerStatus }) {
+//   if (status === 'connected') return null;
+//   const cfg = OVERLAY_CONFIG[status];
+//   return (
+//     <div style={{
+//       position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+//       alignItems: 'center', justifyContent: 'center', gap: 12,
+//       background: 'rgba(8,8,18,0.85)', backdropFilter: 'blur(8px)',
+//       borderRadius: 'inherit', zIndex: 10,
+//     }}>
+//       {cfg.spin && (
+//         <div style={{
+//           width: 52, height: 52, borderRadius: '50%',
+//           borderWidth: 3, borderStyle: 'solid',
+//           borderColor: `transparent transparent transparent ${cfg.accent}`,
+//           animation: 'spin 0.9s linear infinite',
+//         }} />
+//       )}
+//       <span style={{ fontSize: cfg.spin ? 26 : 44, lineHeight: 1 }}>{cfg.icon}</span>
+//       <p style={{ color: '#fff', fontWeight: 600, fontSize: 15, margin: 0, textAlign: 'center', padding: '0 16px' }}>{cfg.line1}</p>
+//       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0, textAlign: 'center', padding: '0 16px' }}>{cfg.line2}</p>
+//       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+//     </div>
+//   );
+// }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 function RandomChatPage() {

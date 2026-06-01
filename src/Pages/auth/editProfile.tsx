@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 import './EditProfilePage.css';
 import { updateProfile } from '../../services/userServices';
 import { COUNTRIES } from './SignupPage';
-import ReactCountryFlag from 'react-country-flag';
+// import ReactCountryFlag from 'react-country-flag';
 import { useNavigate } from 'react-router-dom';
 
 const EditProfilePage: React.FC = () => {
