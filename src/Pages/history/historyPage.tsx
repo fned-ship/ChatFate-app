@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 import ReactCountryFlag from "react-country-flag";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
-import './historyPage.css';
+import './historypage.css';
 
 interface Partner {
   _id: string;
