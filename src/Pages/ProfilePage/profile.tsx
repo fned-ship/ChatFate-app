@@ -296,7 +296,7 @@ const Profile = () => {
                                     </div>
                                     <h3>Magic of Fate</h3>
                                     <p>ChatFate uses a proprietary algorithm that considers your interests, language preferences, and mood to find the most compatible random matches in the cosmos.</p>
-                                    <a className="feature-link">Learn more about matching →</a>
+                                    <a className="feature-link" onClick={() => navigate('/info/matching')} >Learn more about matching →</a>
                                 </div>
                                 <div className="feature-card">
                                     <div className="feature-icon">
@@ -304,19 +304,22 @@ const Profile = () => {
                                     </div>
                                     <h3>Cosmic Safety</h3>
                                     <p>Your safety is our priority. We employ AI-driven moderation and instant reporting tools to ensure a respectful and stellar experience for everyone in the galaxy.</p>
-                                    <a className="feature-link">Safety guidelines →</a>
+                                    <a className="feature-link" onClick={() => navigate('/info/safety-guidelines')} >Safety guidelines →</a>
                                 </div>
                             </div>
 
                             <div className="random-footer">
-                                <span>© 2024 ChatFate. Connect with destiny.</span>
+                                <span>© 2026 ChatFate. Connect with destiny.</span>
                                 <div className="footer-links">
-                                    <a>Privacy</a><a>Terms</a><a>Safety</a><a>Help Center</a>
+                                    <a onClick={() => navigate('/info/privacy')} >Privacy</a>
+                                    <a onClick={() => navigate('/info/terms')} >Terms</a>
+                                    <a onClick={() => navigate('/info/safety')} >Safety</a>
+                                    <a onClick={() => navigate('/info/help')} >Help Center</a>
                                 </div>
-                                <div className="live-badge">
+                                {/* <div className="live-badge">
                                     <span className="live-dot" />
                                     1,402 active video calls happening now
-                                </div>
+                                </div> */}
                             </div>
                         </div>
                     )}

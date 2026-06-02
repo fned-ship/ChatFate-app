@@ -16,6 +16,8 @@ import EditInterests from './Pages/PickInterest/EditInterests';
 import ChatHistory from './Pages/history/historyPage';
 import ModeratorReports from './Pages/report/moderator';
 
+import InfoPages from "./Pages/infoPages/infoPages"
+
 function App() {
   
 
@@ -26,6 +28,7 @@ function App() {
         <Route path="/random-call" element={<RandomCallPage />} />
         <Route path="/random-chat" element={<RandomChatPage />} />
         <Route path="/interests" element={<EditInterests />} />
+        <Route path="/info/:page" element={<InfoPages  />} />
 
         <Route path="/moderator-reports" element={<ModeratorReports />} />
 

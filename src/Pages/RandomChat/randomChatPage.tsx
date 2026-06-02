@@ -432,12 +432,12 @@ const socketRef = useRef<Socket | null>(null);
 
       {/* ── Footer ── */}
       <footer className="rcp-footer">
-        <span>© 2024 ChatFate. Connect with destiny.</span>
+        <span>© 2026 ChatFate. Connect with destiny.</span>
         <div className="rcp-footer-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Safety</a>
-          <a href="#">Help Center</a>
+          <a onClick={() => navigate('/info/privacy')} >Privacy</a>
+          <a onClick={() => navigate('/info/terms')} >Terms</a>
+          <a onClick={() => navigate('/info/safety')} >Safety</a>
+          <a onClick={() => navigate('/info/help')} >Help Center</a>
         </div>
       </footer>
 
