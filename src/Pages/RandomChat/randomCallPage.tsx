@@ -224,6 +224,53 @@ const currentUserId = Cookies.get('userId');
   const [chatOpen, setChatOpen]                   = useState(false);
   const [micMuted, setMicMuted]                   = useState(false);
 
+  // ── Tips carousel ─────────────────────────────────────────────────────────
+  const TIPS = [
+    { icon: '🌟', title: 'Be yourself', body: "Authentic conversations lead to real connections. Don't be afraid to share your interests!" },
+    { icon: '🎤', title: 'Check your mic', body: 'Make sure your microphone is working before the match is found. Use the mute button below if needed.' },
+    { icon: '💡', title: 'Interests = better matches', body: 'The more interests you add to your profile, the better your match quality. Add them in your profile settings.' },
+    { icon: '🛡️', title: 'Stay safe', body: 'Never share personal information like your address, phone number, or full name with strangers.' },
+    { icon: '🚩', title: 'Report bad behavior', body: 'If someone makes you uncomfortable, use the Report button. Our AI moderation also works automatically to keep you safe.' },
+    { icon: '⚡', title: 'Low wait = high match', body: 'Wait times under 10 seconds usually mean a high-compatibility match was found. Longer waits trigger random matching.' },
+    { icon: '🌍', title: 'Cultural curiosity', body: 'You might meet someone from the other side of the world. Ask about their culture — it makes for the best conversations!' },
+    { icon: '😊', title: 'Start with a smile', body: 'The first 3 seconds set the tone. A smile and a quick "Hey!" goes a long way.' },
+  ];
+
+  const [tipIndex,     setTipIndex]     = useState(0);
+  const [tipSeen,      setTipSeen]      = useState<boolean[]>(new Array(8).fill(false));
+  const [notifAsked,   setNotifAsked]   = useState(false);
+  const [notifGranted, setNotifGranted] = useState(
+    typeof Notification !== 'undefined' && Notification.permission === 'granted'
+  );
+
+  const handleNextTip = () => {
+    setTipSeen(prev => { const n = [...prev]; n[tipIndex] = true; return n; });
+    setTipIndex(i => (i + 1) % TIPS.length);
+  };
+
+  const handlePrevTip = () => {
+    setTipIndex(i => (i - 1 + TIPS.length) % TIPS.length);
+  };
+
+  const requestNotifPermission = async () => {
+    if (typeof Notification === 'undefined') return;
+    setNotifAsked(true);
+    const perm = await Notification.requestPermission();
+    setNotifGranted(perm === 'granted');
+  };
+
+  // Fire notification when partner found (if permission granted)
+  useEffect(() => {
+    if (partnerStatus === 'connecting' && notifGranted) {
+      try {
+        new Notification('ChatFate — Match found! 🎉', {
+          body: 'Your partner is ready. Come back and say hi!',
+          icon: '/favicon.ico',
+        });
+      } catch (_) {}
+    }
+  }, [partnerStatus, notifGranted]);
+
   useEffect(() => {
     elapsedRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
     return () => { if (elapsedRef.current) clearInterval(elapsedRef.current); };
@@ -818,6 +865,7 @@ const currentUserId = Cookies.get('userId');
         <div className="rc-partner-card">
           {partnerStatus !== 'connected' ? (
             <div className="rc-searching">
+              {/* Status icon + text */}
               <div className="rc-searching-icon">
                 <span className="rc-searching-star">✦</span>
               </div>
@@ -825,6 +873,70 @@ const currentUserId = Cookies.get('userId');
                 <h3>{OVERLAY_CONFIG[partnerStatus as Exclude<PartnerStatus,'connected'>]?.line1 ?? 'Finding you a partner…'}</h3>
                 <p>{OVERLAY_CONFIG[partnerStatus as Exclude<PartnerStatus,'connected'>]?.line2 ?? 'This usually takes a few seconds.'}</p>
               </div>
+
+              {/* ── Notification banner ── */}
+              {!notifAsked && !notifGranted && Notification.permission === 'default' && (
+                <div className="rc-notif-banner">
+                  <div className="rc-notif-text">
+                    <span className="rc-notif-icon">🔔</span>
+                    <div>
+                      <strong>Don't want to wait here?</strong>
+                      <p>Enable notifications and we'll ping you the moment your match is found.</p>
+                    </div>
+                  </div>
+                  <button className="rc-notif-btn" onClick={requestNotifPermission}>
+                    Enable
+                  </button>
+                </div>
+              )}
+
+              {notifGranted && (
+                <div className="rc-notif-granted">
+                  <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 12l2 2 4-4M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  We'll notify you when your match is ready — feel free to switch tabs.
+                </div>
+              )}
+
+              {/* ── Tips carousel ── */}
+              {partnerStatus === 'searching' && (
+                <div className="rc-tips-card">
+                  <div className="rc-tips-header">
+                    <span className="rc-tips-label">While you wait</span>
+                    <div className="rc-tips-dots">
+                      {TIPS.map((_, i) => (
+                        <button
+                          key={i}
+                          className={`rc-tip-dot${i === tipIndex ? ' active' : ''}${tipSeen[i] ? ' seen' : ''}`}
+                          onClick={() => setTipIndex(i)}
+                          aria-label={`Tip ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rc-tip-body">
+                    <span className="rc-tip-icon">{TIPS[tipIndex].icon}</span>
+                    <div>
+                      <strong className="rc-tip-title">{TIPS[tipIndex].title}</strong>
+                      <p className="rc-tip-text">{TIPS[tipIndex].body}</p>
+                    </div>
+                  </div>
+
+                  <div className="rc-tips-footer">
+                    <span className="rc-tip-counter">{tipIndex + 1} / {TIPS.length}</span>
+                    <div className="rc-tips-nav">
+                      <button className="rc-tip-nav-btn" onClick={handlePrevTip} aria-label="Previous tip">
+                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                      <button className="rc-tip-nav-btn rc-tip-nav-btn--next" onClick={handleNextTip} aria-label="Next tip">
+                        Next
+                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {matchPayload?.commonInterests?.length > 0 && (
                 <div className="rc-interest-tags">
                   {matchPayload.commonInterests.map((int: string) => (
